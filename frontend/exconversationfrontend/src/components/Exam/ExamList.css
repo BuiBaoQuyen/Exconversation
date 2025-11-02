@@ -1,0 +1,66 @@
+.exam-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.exam-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.exam-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.exam-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  flex: 1;
+}
+
+.blueprint-badge {
+  padding: 0.25rem 0.75rem;
+  background-color: #3498db;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.exam-info {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.exam-info p {
+  margin: 0.5rem 0;
+  color: #666;
+}
+
+.exam-info strong {
+  color: #2c3e50;
+}
+
+.exam-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 8px;
+  color: #666;
+}
+

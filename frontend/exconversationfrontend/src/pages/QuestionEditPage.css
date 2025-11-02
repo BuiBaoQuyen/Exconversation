@@ -1,0 +1,16 @@
+.question-edit-page {
+  padding: 2rem 0;
+}
+
+.question-edit-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.question-edit-page .page-header h1 {
+  color: #2c3e50;
+  margin: 0;
+}
+

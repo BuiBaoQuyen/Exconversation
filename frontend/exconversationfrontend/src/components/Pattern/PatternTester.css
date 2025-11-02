@@ -1,0 +1,98 @@
+.pattern-tester-container {
+  margin-bottom: 2rem;
+}
+
+.pattern-tester {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.tester-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.tester-header h2 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.btn-close:hover {
+  background-color: #f0f0f0;
+}
+
+.tester-content textarea {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+}
+
+.test-results {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.test-results h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.result-item {
+  margin-bottom: 1rem;
+}
+
+.result-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #2c3e50;
+}
+
+.result-item ul {
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+}
+
+.result-item li {
+  margin-bottom: 0.25rem;
+}
+
+.result-item code {
+  background-color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+}
+
+.success {
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.error {
+  color: #e74c3c;
+  font-weight: 500;
+}
+

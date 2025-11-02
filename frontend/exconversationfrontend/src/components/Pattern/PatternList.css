@@ -1,0 +1,113 @@
+.pattern-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.pattern-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.pattern-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.pattern-header h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.pattern-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge.active {
+  background-color: #27ae60;
+  color: white;
+}
+
+.pattern-details {
+  margin-bottom: 1rem;
+}
+
+.pattern-item {
+  margin-bottom: 0.75rem;
+}
+
+.pattern-item label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.pattern-item code {
+  display: block;
+  background-color: #f5f5f5;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: #2c3e50;
+  word-break: break-all;
+}
+
+.pattern-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+  background-color: #7f8c8d;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 8px;
+  color: #666;
+}
+

@@ -1,0 +1,66 @@
+.blueprint-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.blueprint-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.blueprint-header h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.blueprint-info {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.blueprint-info p {
+  margin: 0.5rem 0;
+  color: #666;
+}
+
+.blueprint-info strong {
+  color: #2c3e50;
+}
+
+.blueprint-details {
+  margin-top: 1rem;
+}
+
+.blueprint-details strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+}
+
+.blueprint-details ul {
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+  color: #666;
+}
+
+.blueprint-details li {
+  margin-bottom: 0.25rem;
+}
+
+.blueprint-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 8px;
+  color: #666;
+}
+

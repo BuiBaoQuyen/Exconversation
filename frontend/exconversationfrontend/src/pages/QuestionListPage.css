@@ -1,0 +1,35 @@
+.question-list-page {
+  padding: 2rem 0;
+}
+
+.question-list-page .page-header h1 {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  max-width: 400px;
+}
+
+.btn-active {
+  background-color: #3498db;
+  border: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
