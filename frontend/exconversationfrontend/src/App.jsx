@@ -3,6 +3,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import Layout from './components/common/Layout';
+// Temporarily disable ErrorBoundary to debug
+// import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import PatternConfigPage from './pages/PatternConfigPage';
 import UploadPage from './pages/UploadPage';

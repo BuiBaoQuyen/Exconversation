@@ -4,7 +4,7 @@ function ExamList({ exams, onView, onExport, onDelete }) {
   if (exams.length === 0) {
     return (
       <div className="empty-state">
-        <p>No exams found. Generate an exam from a blueprint first.</p>
+        <p>No exams found.</p>
       </div>
     );
   }
@@ -15,9 +15,6 @@ function ExamList({ exams, onView, onExport, onDelete }) {
         <div key={exam.id} className="exam-card">
           <div className="exam-header">
             <h3>{exam.name}</h3>
-            {exam.blueprintName && (
-              <span className="blueprint-badge">From: {exam.blueprintName}</span>
-            )}
           </div>
           <div className="exam-info">
             {exam.questions && (

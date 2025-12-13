@@ -28,7 +28,7 @@ function FileUploader({ onUpload }) {
     }
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const dropzoneResult = useDropzone({
     onDrop,
     accept: {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
@@ -36,13 +36,18 @@ function FileUploader({ onUpload }) {
     multiple: false,
   });
 
+  const { getRootProps, getInputProps, isDragActive } = dropzoneResult || {};
+  
+  const rootProps = getRootProps ? getRootProps() : {};
+  const inputProps = getInputProps ? getInputProps() : {};
+
   return (
     <div className="file-uploader">
       <div
-        {...getRootProps()}
+        {...rootProps}
         className={`dropzone ${isDragActive ? 'active' : ''} ${uploading ? 'uploading' : ''}`}
       >
-        <input {...getInputProps()} />
+        <input {...inputProps} />
         {uploading ? (
           <div className="upload-status">
             <div className="spinner"></div>

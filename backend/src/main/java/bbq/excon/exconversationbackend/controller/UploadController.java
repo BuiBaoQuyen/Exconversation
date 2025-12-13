@@ -1,8 +1,6 @@
 package bbq.excon.exconversationbackend.controller;
 
-import bbq.excon.exconversationbackend.dto.ParseResult;
 import bbq.excon.exconversationbackend.entity.Upload;
-import bbq.excon.exconversationbackend.service.ParseService;
 import bbq.excon.exconversationbackend.service.UploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,10 +19,10 @@ public class UploadController {
     private UploadService uploadService;
     
     @Autowired
-    private ParseService parseService;
+    private bbq.excon.exconversationbackend.parser.DocumentParserService documentParserService;
     
     /**
-     * Upload file DOCX
+     * Upload file DOCX và tự động parse bằng Hybrid approach (Fast + AI)
      */
     @PostMapping
     public ResponseEntity<?> uploadFile(
@@ -74,21 +72,21 @@ public class UploadController {
     }
     
     /**
-     * Parse DOCX file với pattern đã chọn
+     * Parse lại DOCX file bằng DocumentParserService mới (nếu cần parse lại)
+     * Async processing - returns immediately
      */
     @PostMapping("/{id}/parse")
-    public ResponseEntity<ParseResult> parseDocument(
-            @PathVariable Long id,
-            @RequestParam Long patternId) {
+    public ResponseEntity<?> parseDocument(@PathVariable Long id) {
         try {
-            ParseResult result = parseService.parseDocument(id, patternId);
-            return ResponseEntity.ok(result);
+            // Start async parsing with new DocumentParserService
+            documentParserService.parseDocument(id);
+            
+            // Return immediately
+            return ResponseEntity.accepted()
+                    .body("{\"message\": \"Document parsing started. Check status via GET /api/upload/" + id + "\"}");
         } catch (Exception e) {
-            ParseResult errorResult = new ParseResult();
-            errorResult.setSuccess(false);
-            errorResult.setMessage("Error parsing document: " + e.getMessage());
-            errorResult.addError(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResult);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Failed to start parsing: " + e.getMessage() + "\"}");
         }
     }
     

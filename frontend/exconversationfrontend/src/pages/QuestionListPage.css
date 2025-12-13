@@ -1,12 +1,194 @@
 .question-list-page {
-  padding: 2rem 0;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.question-list-page .page-header h1 {
+.page-header h1 {
   color: #2c3e50;
   margin-bottom: 2rem;
 }
 
+/* Paper-like Upload Cards */
+.uploads-list-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.upload-paper-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  min-height: 400px;
+  position: relative;
+  /* Paper-like vertical design */
+  max-width: 800px;
+  margin: 0 auto;
+  background: linear-gradient(to right, #f5f5f5 0%, #fff 2%, #fff 98%, #f5f5f5 100%);
+}
+
+/* Paper Header */
+.paper-header {
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.paper-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.paper-title h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-parsed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.paper-meta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Chapters List - Vertical Layout */
+.paper-chapters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chapter-row {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fafafa;
+  transition: all 0.2s;
+}
+
+.chapter-row:hover {
+  background: #f5f5f5;
+  border-color: #3498db;
+}
+
+.chapter-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.chapter-row-header:hover {
+  background-color: #f0f0f0;
+}
+
+.chapter-row-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.expand-arrow {
+  display: inline-block;
+  transition: transform 0.3s;
+  color: #666;
+  font-size: 0.8rem;
+  width: 1rem;
+  text-align: center;
+}
+
+.expand-arrow[data-expanded="true"] {
+  transform: rotate(90deg);
+}
+
+.chapter-name {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.chapter-index {
+  background-color: #3498db;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.chapter-question-count {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Expanded Questions */
+.chapter-questions {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.loading-questions,
+.loading-chapters {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.empty-questions,
+.no-chapters {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-style: italic;
+}
+
+/* Load More Trigger for Infinite Scroll */
+.load-more-trigger {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Filters */
 .filters {
   display: flex;
   gap: 1rem;
@@ -33,3 +215,72 @@
   cursor: pointer;
 }
 
+/* Pagination Controls (kept for backward compatibility) */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background-color: white;
+  color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Back Button */
+.back-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #5a6268;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.1rem;
+}

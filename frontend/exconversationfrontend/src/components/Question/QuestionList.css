@@ -3,6 +3,39 @@
   gap: 1.5rem;
 }
 
+.question-list-grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.question-group {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #fafafa;
+}
+
+.group-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #ddd;
+}
+
+.section-header,
+.chapter-header {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.questions-in-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .question-card {
   background: white;
   border: 1px solid #e0e0e0;

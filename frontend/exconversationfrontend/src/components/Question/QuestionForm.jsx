@@ -4,7 +4,8 @@ import './QuestionForm.css';
 function QuestionForm({ question, onSave, onCancel, saving }) {
   const [formData, setFormData] = useState({
     title: '',
-    content: '',
+    contentLatex: '',
+    contentOmml: '',
     chapterId: null,
     type: 'Trắc nghiệm',
     isActive: true,
@@ -13,9 +14,13 @@ function QuestionForm({ question, onSave, onCancel, saving }) {
 
   useEffect(() => {
     if (question) {
+      console.log('QuestionForm: Setting form data from question:', question);
+      console.log('ContentLatex:', question.contentLatex ? `Length: ${question.contentLatex.length}` : 'null/undefined');
+      console.log('Answers:', question.answers ? `Count: ${question.answers.length}` : 'null/undefined');
       setFormData({
         title: question.title || '',
-        content: question.content || '',
+        contentLatex: question.contentLatex || '',
+        contentOmml: question.contentOmml || '',
         chapterId: question.chapterId || null,
         type: question.type || 'Trắc nghiệm',
         isActive: question.isActive !== undefined ? question.isActive : true,
@@ -65,7 +70,8 @@ function QuestionForm({ question, onSave, onCancel, saving }) {
         ...prev.answers,
         {
           orderLabel: nextLabel,
-          content: '',
+          contentLatex: '',
+          contentOmml: '',
           isCorrect: false,
         },
       ],
@@ -101,14 +107,23 @@ function QuestionForm({ question, onSave, onCancel, saving }) {
           />
         </div>
         <div className="form-group">
-          <label htmlFor="content">Content</label>
+          <label htmlFor="contentLatex">Content (LaTeX)</label>
           <textarea
-            id="content"
-            name="content"
-            value={formData.content}
+            id="contentLatex"
+            name="contentLatex"
+            value={formData.contentLatex}
             onChange={handleChange}
-            rows="10"
-            placeholder="Question content (can include MathML for formulas)"
+            rows="6"
+            placeholder="Nội dung LaTeX hiển thị"
+          />
+          <label htmlFor="contentOmml">Content (OMML cho export DOCX)</label>
+          <textarea
+            id="contentOmml"
+            name="contentOmml"
+            value={formData.contentOmml}
+            onChange={handleChange}
+            rows="6"
+            placeholder="OMML (giữ cho xuất DOCX, nếu có)"
           />
         </div>
         <div className="form-group">
@@ -160,11 +175,19 @@ function QuestionForm({ question, onSave, onCancel, saving }) {
                   </button>
                 </div>
                 <div className="answer-content">
+                  <label>Đáp án (LaTeX)</label>
                   <textarea
-                    value={answer.content}
-                    onChange={(e) => handleAnswerChange(index, 'content', e.target.value)}
+                    value={answer.contentLatex || ''}
+                    onChange={(e) => handleAnswerChange(index, 'contentLatex', e.target.value)}
                     rows="3"
-                    placeholder="Answer content..."
+                    placeholder="Answer LaTeX..."
+                  />
+                  <label>Đáp án (OMML)</label>
+                  <textarea
+                    value={answer.contentOmml || ''}
+                    onChange={(e) => handleAnswerChange(index, 'contentOmml', e.target.value)}
+                    rows="3"
+                    placeholder="Answer OMML..."
                   />
                 </div>
                 <div className="answer-checkbox">

@@ -24,16 +24,6 @@
   flex: 1;
 }
 
-.blueprint-badge {
-  padding: 0.25rem 0.75rem;
-  background-color: #3498db;
-  color: white;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 .exam-info {
   margin-bottom: 1rem;
   font-size: 0.875rem;

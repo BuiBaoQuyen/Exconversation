@@ -13,13 +13,13 @@ public class Image {
     private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Question_Version_Id")
+    @JoinColumn(name = "Question_Version_Id", nullable = false)
     private QuestionVersion questionVersion;
     
-    @Column(name = "Image_Path", nullable = false, length = 1024)
+    @Column(name = "Image_Path", nullable = false, length = 1024, columnDefinition = "NVARCHAR(1024)")
     private String imagePath;
     
-    @Column(name = "Description", length = 255)
+    @Column(name = "Description", length = 255, columnDefinition = "NVARCHAR(255)")
     private String description;
     
     @Column(name = "Created_At")

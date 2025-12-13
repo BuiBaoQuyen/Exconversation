@@ -14,18 +14,13 @@ public class Exam {
     @Column(name = "Id")
     private Long id;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Blueprint_Id")
-    private ExamBlueprint blueprint;
-    
-    @Column(name = "Name", nullable = false, length = 255)
+    @Column(name = "Name", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String name;
     
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
     
-    @Lob
-    @Column(name = "Note")
+    @Column(name = "Note", columnDefinition = "NVARCHAR(MAX)")
     private String note;
     
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -43,14 +38,6 @@ public class Exam {
     
     public void setId(Long id) {
         this.id = id;
-    }
-    
-    public ExamBlueprint getBlueprint() {
-        return blueprint;
-    }
-    
-    public void setBlueprint(ExamBlueprint blueprint) {
-        this.blueprint = blueprint;
     }
     
     public String getName() {

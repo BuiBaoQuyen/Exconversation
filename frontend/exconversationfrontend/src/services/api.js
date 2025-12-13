@@ -26,7 +26,23 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       // Handle errors
-      console.error('API Error:', error.response.data);
+      console.error('API Error:', error.response.status, error.response.data);
+      
+      // Handle specific error cases
+      if (error.response.status === 500) {
+        console.error('Server error:', error.response.data);
+      } else if (error.response.status === 404) {
+        console.error('Resource not found');
+      } else if (error.response.status === 429) {
+        console.error('Rate limit exceeded');
+      }
+    } else if (error.request) {
+      // Request was made but no response received
+      console.error('No response received:', error.request);
+      error.message = 'Network error. Please check your connection.';
+    } else {
+      // Something else happened
+      console.error('Error setting up request:', error.message);
     }
     return Promise.reject(error);
   }
@@ -57,43 +73,31 @@ export const uploadAPI = {
   getAll: () => api.get('/upload'),
   getById: (id) => api.get(`/upload/${id}`),
   getByStatus: (status) => api.get(`/upload/status/${status}`),
-  parse: (id, patternId) => api.post(`/upload/${id}/parse`, null, {
-    params: { patternId },
-  }),
+  parse: (id) => api.post(`/upload/${id}/parse`), // AI parsing - no patternId needed
   delete: (id) => api.delete(`/upload/${id}`),
 };
 
 // Question API
 export const questionAPI = {
-  getAll: (chapterId) => api.get('/questions', { params: { chapterId } }),
+  getAll: (chapterId, page = 0, size = 20) => 
+    api.get('/questions', { params: { chapterId, page, size } }),
   getById: (id) => api.get(`/questions/${id}`),
   update: (id, data) => api.put(`/questions/${id}`, data),
   createVersion: (id, data) => api.post(`/questions/${id}/version`, data),
   delete: (id) => api.delete(`/questions/${id}`),
 };
 
-// Chapter API (if needed)
+// Chapter API
 export const chapterAPI = {
-  getAll: () => api.get('/chapters').catch(() => ({ data: [] })), // Return empty if endpoint not exists
-};
-
-// Blueprint API
-export const blueprintAPI = {
-  getAll: () => api.get('/blueprints'),
-  getById: (id) => api.get(`/blueprints/${id}`),
-  create: (data) => api.post('/blueprints', data),
-  update: (id, data) => api.put(`/blueprints/${id}`, data),
-  delete: (id) => api.delete(`/blueprints/${id}`),
+  getAll: () => api.get('/chapters'),
+  getById: (id) => api.get(`/chapters/${id}`),
+  getByUploadId: (uploadId) => api.get(`/chapters/upload/${uploadId}`),
 };
 
 // Exam API
 export const examAPI = {
   getAll: () => api.get('/exams'),
   getById: (id) => api.get(`/exams/${id}`),
-  generate: (blueprintId, examName, createdByName) =>
-    api.post('/exams/generate', null, {
-      params: { blueprintId, examName, createdByName },
-    }),
   delete: (id) => api.delete(`/exams/${id}`),
   export: (id, includeAnswers = false) =>
     api.get(`/exams/${id}/export`, {
@@ -104,6 +108,33 @@ export const examAPI = {
     api.get(`/exams/${id}/export-with-answers`, {
       responseType: 'blob',
     }),
+  printRandom: (numberOfQuestions = 40, includeAnswers = false) => {
+    console.log('[API] printRandom called with params:', { numberOfQuestions, includeAnswers });
+    console.log('[API] Making GET request to /exams/print-random');
+    return api.get('/exams/print-random', {
+      params: { numberOfQuestions, includeAnswers },
+      responseType: 'blob',
+    }).then(response => {
+      console.log('[API] printRandom response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        dataType: response.data?.constructor?.name || typeof response.data,
+        dataSize: response.data?.size || response.data?.length || 'unknown'
+      });
+      return response;
+    }).catch(error => {
+      console.error('[API] printRandom error:', error);
+      console.error('[API] Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      throw error;
+    });
+  },
 };
 
 export default api;

@@ -10,7 +10,8 @@ public class QuestionDTO {
     private Boolean isActive;
     private Long currentVersionId;
     private String title;
-    private String content;
+    private String contentOmml;   // text + OMML
+    private String contentLatex;  // text + LaTeX
     private List<AnswerDTO> answers;
     private List<ImageDTO> images;
     
@@ -75,13 +76,11 @@ public class QuestionDTO {
         this.title = title;
     }
     
-    public String getContent() {
-        return content;
-    }
-    
-    public void setContent(String content) {
-        this.content = content;
-    }
+    public String getContentOmml() { return contentOmml; }
+    public void setContentOmml(String contentOmml) { this.contentOmml = contentOmml; }
+
+    public String getContentLatex() { return contentLatex; }
+    public void setContentLatex(String contentLatex) { this.contentLatex = contentLatex; }
     
     public List<AnswerDTO> getAnswers() {
         return answers;

@@ -12,23 +12,22 @@ public class ActionLog {
     @Column(name = "Id")
     private Long id;
     
-    @Column(name = "Action_Type", nullable = false, length = 100)
+    @Column(name = "Action_Type", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String actionType; // UPLOAD, GENERATE_EXAM, etc.
     
     @Column(name = "Reference_Id")
     private Long referenceId;
     
-    @Column(name = "Reference_Table", length = 100)
+    @Column(name = "Reference_Table", length = 100, columnDefinition = "NVARCHAR(100)")
     private String referenceTable; // Upload, Exam
     
-    @Column(name = "Actor_Name", length = 255)
+    @Column(name = "Actor_Name", length = 255, columnDefinition = "NVARCHAR(255)")
     private String actorName;
     
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
     
-    @Lob
-    @Column(name = "Message")
+    @Column(name = "Message", columnDefinition = "NVARCHAR(MAX)")
     private String message;
     
     // Constructors

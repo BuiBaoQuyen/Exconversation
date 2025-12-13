@@ -4,8 +4,6 @@ import java.util.List;
 
 public class ExamDTO {
     private Long id;
-    private Long blueprintId;
-    private String blueprintName;
     private String name;
     private String note;
     private List<ExamQuestionDTO> questions;
@@ -21,22 +19,6 @@ public class ExamDTO {
     
     public void setId(Long id) {
         this.id = id;
-    }
-    
-    public Long getBlueprintId() {
-        return blueprintId;
-    }
-    
-    public void setBlueprintId(Long blueprintId) {
-        this.blueprintId = blueprintId;
-    }
-    
-    public String getBlueprintName() {
-        return blueprintName;
-    }
-    
-    public void setBlueprintName(String blueprintName) {
-        this.blueprintName = blueprintName;
     }
     
     public String getName() {

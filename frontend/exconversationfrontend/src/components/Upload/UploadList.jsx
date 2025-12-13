@@ -90,13 +90,16 @@ function UploadList({ uploads, onParse, onDelete, onRefresh }) {
               )}
             </div>
             <div className="upload-actions">
-              {upload.status === 'pending' && (
+              {(upload.status === 'pending' || upload.status === 'error') && (
                 <button
                   onClick={() => onParse(upload)}
                   className="btn-primary"
                 >
-                  Parse
+                  {upload.status === 'error' ? 'Retry Parse' : 'Parse with AI'}
                 </button>
+              )}
+              {upload.status === 'parsing' && (
+                <span className="parsing-indicator">Parsing in progress...</span>
               )}
               <button
                 onClick={() => onDelete(upload.id)}

@@ -1,77 +1,64 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { uploadAPI, patternAPI } from '../services/api';
+import { uploadAPI } from '../services/api';
 import FileUploader from '../components/Upload/FileUploader';
 import UploadList from '../components/Upload/UploadList';
-import ParseConfig from '../components/Upload/ParseConfig';
 import './UploadPage.css';
 
 function UploadPage() {
   const [uploads, setUploads] = useState([]);
-  const [patterns, setPatterns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUpload, setSelectedUpload] = useState(null);
-  const [showParseConfig, setShowParseConfig] = useState(false);
 
   useEffect(() => {
     loadUploads();
-    loadPatterns();
   }, []);
 
   const loadUploads = async () => {
     try {
       setLoading(true);
       const response = await uploadAPI.getAll();
-      setUploads(response.data);
+      setUploads(response.data || []);
     } catch (error) {
-      toast.error('Failed to load uploads: ' + error.message);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Unknown error';
+      console.error('Failed to load uploads:', error);
+      toast.error('Failed to load uploads: ' + errorMessage);
+      setUploads([]); // Set empty array on error to prevent crash
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadPatterns = async () => {
-    try {
-      const response = await patternAPI.getAll();
-      const activePatterns = response.data.filter((p) => p.isActive);
-      setPatterns(activePatterns);
-    } catch (error) {
-      toast.error('Failed to load patterns: ' + error.message);
     }
   };
 
   const handleUpload = async (file, uploadedByName) => {
     try {
       const response = await uploadAPI.upload(file, uploadedByName);
-      toast.success('File uploaded successfully');
-      loadUploads();
+      toast.success('File uploaded successfully. AI parsing started automatically.');
+      // Reload uploads after a short delay to ensure backend processed
+      setTimeout(() => {
+        loadUploads();
+      }, 500);
       return response.data;
     } catch (error) {
-      toast.error('Failed to upload file: ' + error.message);
-      throw error;
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Unknown error';
+      console.error('Upload error:', error);
+      toast.error('Failed to upload file: ' + errorMessage);
+      // Don't throw error to prevent component crash
+      return null;
     }
   };
 
-  const handleParse = (upload) => {
-    setSelectedUpload(upload);
-    setShowParseConfig(true);
-  };
-
-  const handleParseConfirm = async (patternId) => {
+  const handleParse = async (upload) => {
     try {
-      await uploadAPI.parse(selectedUpload.id, patternId);
+      await uploadAPI.parse(upload.id);
       toast.success('Parsing started. Please check status shortly.');
-      setShowParseConfig(false);
-      setSelectedUpload(null);
-      loadUploads();
+      // Reload uploads after a short delay
+      setTimeout(() => {
+        loadUploads();
+      }, 500);
     } catch (error) {
-      toast.error('Failed to start parsing: ' + error.message);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Unknown error';
+      console.error('Parse error:', error);
+      toast.error('Failed to start parsing: ' + errorMessage);
     }
-  };
-
-  const handleParseCancel = () => {
-    setShowParseConfig(false);
-    setSelectedUpload(null);
   };
 
   const handleDelete = async (id) => {
@@ -83,37 +70,35 @@ function UploadPage() {
       toast.success('Upload deleted successfully');
       loadUploads();
     } catch (error) {
-      toast.error('Failed to delete upload: ' + error.message);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Unknown error';
+      console.error('Delete error:', error);
+      toast.error('Failed to delete upload: ' + errorMessage);
     }
   };
 
-  if (loading) {
-    return <div className="loading">Loading uploads...</div>;
-  }
-
+  // Always render, even if loading or error
   return (
     <div className="upload-page">
       <div className="page-header">
         <h1>Upload & Parse</h1>
+        <p className="page-description">
+          Upload DOCX files. AI will automatically detect and parse questions, answers, and chapters.
+        </p>
       </div>
 
-      <FileUploader onUpload={handleUpload} />
-
-      {showParseConfig && selectedUpload && (
-        <ParseConfig
-          upload={selectedUpload}
-          patterns={patterns}
-          onConfirm={handleParseConfirm}
-          onCancel={handleParseCancel}
-        />
+      {loading ? (
+        <div className="loading">Loading uploads...</div>
+      ) : (
+        <div>
+          <FileUploader onUpload={handleUpload} />
+          <UploadList
+            uploads={uploads || []}
+            onParse={handleParse}
+            onDelete={handleDelete}
+            onRefresh={loadUploads}
+          />
+        </div>
       )}
-
-      <UploadList
-        uploads={uploads}
-        onParse={handleParse}
-        onDelete={handleDelete}
-        onRefresh={loadUploads}
-      />
     </div>
   );
 }

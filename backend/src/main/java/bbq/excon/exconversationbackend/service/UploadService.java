@@ -2,6 +2,7 @@ package bbq.excon.exconversationbackend.service;
 
 import bbq.excon.exconversationbackend.entity.Upload;
 import bbq.excon.exconversationbackend.repository.UploadRepository;
+import bbq.excon.exconversationbackend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,8 +19,11 @@ public class UploadService {
     @Autowired
     private FileStorageService fileStorageService;
     
+    @Autowired
+    private bbq.excon.exconversationbackend.parser.DocumentParserService documentParserService;
+    
     /**
-     * Upload và lưu file DOCX
+     * Upload và lưu file DOCX, tự động parse bằng Hybrid approach (Fast + AI)
      */
     @Transactional
     public Upload uploadFile(MultipartFile file, String uploadedByName) throws Exception {
@@ -47,7 +51,20 @@ public class UploadService {
         upload.setStatus("pending");
         upload.setUploadDate(LocalDateTime.now());
         
-        return uploadRepository.save(upload);
+        upload = uploadRepository.save(upload);
+        
+        // Tự động parse bằng DocumentParserService mới (async)
+        try {
+            documentParserService.parseDocument(upload.getId());
+        } catch (Exception e) {
+            // Log error nhưng không throw - upload đã thành công
+            System.err.println("Failed to start document parsing: " + e.getMessage());
+            upload.setStatus("error");
+            upload.setNote("Upload successful but parsing failed: " + e.getMessage());
+            uploadRepository.save(upload);
+        }
+        
+        return upload;
     }
     
     /**

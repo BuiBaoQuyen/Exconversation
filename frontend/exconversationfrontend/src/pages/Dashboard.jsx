@@ -6,13 +6,14 @@ function Dashboard() {
     <div className="dashboard">
       <h1>Dashboard</h1>
       <div className="dashboard-grid">
-        <Link to="/patterns" className="dashboard-card">
+        {/* Pattern configuration removed - using AI detection only */}
+        {/* <Link to="/patterns" className="dashboard-card">
           <h2>Pattern Configuration</h2>
           <p>Manage question detection patterns</p>
-        </Link>
+        </Link> */}
         <Link to="/upload" className="dashboard-card">
           <h2>Upload & Parse</h2>
-          <p>Upload DOCX files and parse questions</p>
+          <p>Upload DOCX files. AI automatically detects questions, answers, and chapters.</p>
         </Link>
         <Link to="/questions" className="dashboard-card">
           <h2>Question Management</h2>

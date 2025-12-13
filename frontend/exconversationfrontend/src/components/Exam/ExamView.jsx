@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import MathContentRenderer from '../Question/MathContentRenderer';
 import './ExamView.css';
 
 function ExamView({ exam, onExport, onClose }) {
@@ -15,11 +16,6 @@ function ExamView({ exam, onExport, onClose }) {
         </div>
         <div className="view-content">
           <div className="exam-meta">
-            {exam.blueprintName && (
-              <p>
-                <strong>Blueprint:</strong> {exam.blueprintName}
-              </p>
-            )}
             {exam.questions && (
               <p>
                 <strong>Total Questions:</strong> {exam.questions.length}
@@ -61,10 +57,10 @@ function ExamView({ exam, onExport, onClose }) {
                       <>
                         <div className="question-content">
                           <h4>{eq.question.title || `Question ${eq.orderNumber}`}</h4>
-                          {eq.question.content && (
-                            <div
+                          {eq.question.contentLatex && (
+                            <MathContentRenderer 
+                              content={eq.question.contentLatex}
                               className="content-text"
-                              dangerouslySetInnerHTML={{ __html: eq.question.content }}
                             />
                           )}
                           {showAnswers && eq.question.answers && (
@@ -76,7 +72,7 @@ function ExamView({ exam, onExport, onClose }) {
                                     key={answer.id}
                                     className={answer.isCorrect ? 'correct' : ''}
                                   >
-                                    {answer.orderLabel}. {answer.content}
+                                    {answer.orderLabel}. <MathContentRenderer content={answer.contentLatex} />
                                     {answer.isCorrect && ' ✓'}
                                   </li>
                                 ))}

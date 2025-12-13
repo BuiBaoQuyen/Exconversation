@@ -15,10 +15,10 @@ public class Chapter {
     @Column(name = "Chapter_Index", nullable = false)
     private Integer chapterIndex;
     
-    @Column(name = "Chapter_Name", nullable = false, length = 255)
+    @Column(name = "Chapter_Name", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String chapterName;
     
-    @Column(name = "Created_By_Name", length = 255)
+    @Column(name = "Created_By_Name", length = 255, columnDefinition = "NVARCHAR(255)")
     private String createdByName;
     
     @Column(name = "Created_At")

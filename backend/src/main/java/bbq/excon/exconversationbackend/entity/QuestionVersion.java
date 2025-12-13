@@ -19,17 +19,19 @@ public class QuestionVersion {
     @Column(name = "Version_Number", nullable = false)
     private Integer versionNumber = 1;
     
-    @Column(name = "Title", length = 500)
+    @Column(name = "Title", length = 500, columnDefinition = "NVARCHAR(500)")
     private String title;
     
-    @Lob
-    @Column(name = "Content")
-    private String content; // Có thể chứa MathML
+    @Column(name = "Content_OMML", columnDefinition = "NVARCHAR(MAX)")
+    private String contentOmml; // OMML + text
+
+    @Column(name = "Content_LaTeX", columnDefinition = "NVARCHAR(MAX)")
+    private String contentLatex; // LaTeX + text
     
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
     
-    @Column(name = "Created_By_Name", length = 255)
+    @Column(name = "Created_By_Name", length = 255, columnDefinition = "NVARCHAR(255)")
     private String createdByName;
     
     @Column(name = "Is_Published")
@@ -73,13 +75,11 @@ public class QuestionVersion {
         this.title = title;
     }
     
-    public String getContent() {
-        return content;
-    }
-    
-    public void setContent(String content) {
-        this.content = content;
-    }
+    public String getContentOmml() { return contentOmml; }
+    public void setContentOmml(String contentOmml) { this.contentOmml = contentOmml; }
+
+    public String getContentLatex() { return contentLatex; }
+    public void setContentLatex(String contentLatex) { this.contentLatex = contentLatex; }
     
     public LocalDateTime getCreatedAt() {
         return createdAt;

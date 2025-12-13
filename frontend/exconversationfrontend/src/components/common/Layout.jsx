@@ -15,9 +15,10 @@ function Layout() {
             <Link to="/" className={isActive('/') ? 'active' : ''}>
               Dashboard
             </Link>
-            <Link to="/patterns" className={isActive('/patterns') ? 'active' : ''}>
+            {/* Pattern configuration removed - using AI detection only */}
+            {/* <Link to="/patterns" className={isActive('/patterns') ? 'active' : ''}>
               Patterns
-            </Link>
+            </Link> */}
             <Link to="/upload" className={isActive('/upload') ? 'active' : ''}>
               Upload
             </Link>

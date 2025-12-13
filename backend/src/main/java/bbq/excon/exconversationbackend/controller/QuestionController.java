@@ -1,6 +1,7 @@
 package bbq.excon.exconversationbackend.controller;
 
 import bbq.excon.exconversationbackend.dto.QuestionDTO;
+import bbq.excon.exconversationbackend.dto.PageResponse;
 import bbq.excon.exconversationbackend.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/api/questions")
@@ -19,18 +21,34 @@ public class QuestionController {
     private QuestionService questionService;
     
     /**
-     * Get all questions
+     * Get all questions (with pagination support)
      */
     @GetMapping
-    public ResponseEntity<List<QuestionDTO>> getAllQuestions(
-            @RequestParam(required = false) Long chapterId) {
-        List<QuestionDTO> questions;
-        if (chapterId != null) {
-            questions = questionService.getQuestionsByChapter(chapterId);
+    public ResponseEntity<?> getAllQuestions(
+            @RequestParam(required = false) Long chapterId,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size) {
+        
+        // Use pagination if page/size is specified, otherwise return all (for backward compatibility)
+        if (page >= 0 && size > 0) {
+            Page<QuestionDTO> questionPage;
+            if (chapterId != null) {
+                questionPage = questionService.getQuestionsByChapterPaginated(chapterId, page, size);
+            } else {
+                questionPage = questionService.getAllQuestionsPaginated(page, size);
+            }
+            // Wrap Page trong PageResponse để tránh warning về serialize PageImpl
+            return ResponseEntity.ok(new PageResponse<>(questionPage));
         } else {
-            questions = questionService.getAllQuestions();
+            // Backward compatibility: return all questions
+            List<QuestionDTO> questions;
+            if (chapterId != null) {
+                questions = questionService.getQuestionsByChapter(chapterId);
+            } else {
+                questions = questionService.getAllQuestions();
+            }
+            return ResponseEntity.ok(questions);
         }
-        return ResponseEntity.ok(questions);
     }
     
     /**

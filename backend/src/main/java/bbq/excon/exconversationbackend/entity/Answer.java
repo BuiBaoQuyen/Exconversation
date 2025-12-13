@@ -16,12 +16,14 @@ public class Answer {
     @JoinColumn(name = "Question_Version_Id", nullable = false)
     private QuestionVersion questionVersion;
     
-    @Column(name = "Order_Label", length = 10)
+    @Column(name = "Order_Label", length = 10, columnDefinition = "NVARCHAR(10)")
     private String orderLabel; // A, B, C, D
     
-    @Lob
-    @Column(name = "Content", nullable = false)
-    private String content;
+    @Column(name = "Content_OMML", columnDefinition = "NVARCHAR(MAX)")
+    private String contentOmml;
+
+    @Column(name = "Content_LaTeX", columnDefinition = "NVARCHAR(MAX)")
+    private String contentLatex;
     
     @Column(name = "Is_Correct")
     private Boolean isCorrect = false;
@@ -59,13 +61,11 @@ public class Answer {
         this.orderLabel = orderLabel;
     }
     
-    public String getContent() {
-        return content;
-    }
-    
-    public void setContent(String content) {
-        this.content = content;
-    }
+    public String getContentOmml() { return contentOmml; }
+    public void setContentOmml(String contentOmml) { this.contentOmml = contentOmml; }
+
+    public String getContentLatex() { return contentLatex; }
+    public void setContentLatex(String contentLatex) { this.contentLatex = contentLatex; }
     
     public Boolean getIsCorrect() {
         return isCorrect;

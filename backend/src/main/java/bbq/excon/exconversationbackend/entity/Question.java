@@ -13,13 +13,13 @@ public class Question {
     private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Chapter_Id")
+    @JoinColumn(name = "Chapter_Id", nullable = false)
     private Chapter chapter;
     
-    @Column(name = "Type", length = 50)
+    @Column(name = "Type", length = 50, columnDefinition = "NVARCHAR(50)")
     private String type = "Trắc nghiệm"; // MCQ, Essay, FillInBlank
     
-    @Column(name = "Created_By_Name", length = 255)
+    @Column(name = "Created_By_Name", length = 255, columnDefinition = "NVARCHAR(255)")
     private String createdByName;
     
     @Column(name = "Created_At")

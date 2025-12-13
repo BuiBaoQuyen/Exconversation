@@ -12,20 +12,19 @@ public class QuestionPattern {
     @Column(name = "Id")
     private Long id;
     
-    @Column(name = "Pattern_Name", nullable = false, length = 255)
+    @Column(name = "Pattern_Name", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String patternName;
     
-    @Column(name = "Question_Pattern", nullable = false, length = 500)
+    @Column(name = "Question_Pattern", nullable = false, length = 500, columnDefinition = "NVARCHAR(500)")
     private String questionPattern; // Regex để detect câu hỏi
     
-    @Column(name = "Answer_Pattern", nullable = false, length = 500)
+    @Column(name = "Answer_Pattern", nullable = false, length = 500, columnDefinition = "NVARCHAR(500)")
     private String answerPattern; // Regex để detect đáp án
     
-    @Column(name = "Chapter_Detector", length = 500)
+    @Column(name = "Chapter_Detector", length = 500, columnDefinition = "NVARCHAR(500)")
     private String chapterDetector; // Regex để detect chương
     
-    @Lob
-    @Column(name = "Example_Text")
+    @Column(name = "Example_Text", columnDefinition = "NVARCHAR(MAX)")
     private String exampleText; // Sample text để test
     
     @Column(name = "Created_At")
@@ -37,7 +36,7 @@ public class QuestionPattern {
     @Column(name = "Is_Active")
     private Boolean isActive = true;
     
-    @Column(name = "Created_By_Name", length = 255)
+    @Column(name = "Created_By_Name", length = 255, columnDefinition = "NVARCHAR(255)")
     private String createdByName;
     
     // Constructors

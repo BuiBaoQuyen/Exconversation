@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+import QuestionCard from './QuestionCard';
 import './QuestionList.css';
 
-function QuestionList({ questions, onEdit, onDelete }) {
+function QuestionList({ questions, groupedQuestions, onEdit, onDelete, onUpdate }) {
   if (questions.length === 0) {
     return (
       <div className="empty-state">
@@ -10,50 +10,53 @@ function QuestionList({ questions, onEdit, onDelete }) {
     );
   }
 
+  // If groupedQuestions is provided, display grouped by section/chapter
+  if (groupedQuestions && Object.keys(groupedQuestions).length > 0) {
+    return (
+      <div className="question-list-grouped">
+        {Object.entries(groupedQuestions).map(([groupKey, group]) => (
+          <div key={groupKey} className="question-group">
+            {(group.section || group.chapter) && (
+              <div className="group-header">
+                {group.section && group.chapter && (
+                  <h2 className="section-header">
+                    {group.section} - {group.chapter}
+                  </h2>
+                )}
+                {group.section && !group.chapter && (
+                  <h2 className="section-header">{group.section}</h2>
+                )}
+                {group.chapter && !group.section && (
+                  <h2 className="chapter-header">{group.chapter}</h2>
+                )}
+              </div>
+            )}
+            <div className="questions-in-group">
+              {group.questions.map((question) => (
+                <QuestionCard
+                  key={question.id}
+                  question={question}
+                  onUpdate={onUpdate}
+                  onDelete={onDelete}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Fallback to flat list
   return (
     <div className="question-list">
       {questions.map((question) => (
-        <div key={question.id} className="question-card">
-          <div className="question-header">
-            <div>
-              <h3>{question.title || `Question #${question.id}`}</h3>
-              {question.chapterName && (
-                <span className="chapter-badge">{question.chapterName}</span>
-              )}
-            </div>
-            <span className={`status-badge ${question.isActive ? 'active' : 'inactive'}`}>
-              {question.isActive ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <div className="question-preview">
-            {question.content && (
-              <div
-                className="content-preview"
-                dangerouslySetInnerHTML={{
-                  __html: question.content.substring(0, 200) + '...',
-                }}
-              />
-            )}
-          </div>
-          {question.answers && question.answers.length > 0 && (
-            <div className="question-answers">
-              <strong>Answers:</strong>{' '}
-              {question.answers.map((a) => (
-                <span key={a.id} className={`answer-label ${a.isCorrect ? 'correct' : ''}`}>
-                  {a.orderLabel}
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="question-actions">
-            <Link to={`/questions/${question.id}/edit`} className="btn-primary">
-              Edit
-            </Link>
-            <button onClick={() => onDelete(question.id)} className="btn-danger">
-              Delete
-            </button>
-          </div>
-        </div>
+        <QuestionCard
+          key={question.id}
+          question={question}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );

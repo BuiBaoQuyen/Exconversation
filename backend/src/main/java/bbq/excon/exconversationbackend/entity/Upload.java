@@ -12,23 +12,22 @@ public class Upload {
     @Column(name = "Id")
     private Long id;
     
-    @Column(name = "File_Name", nullable = false, length = 512)
+    @Column(name = "File_Name", nullable = false, length = 512, columnDefinition = "NVARCHAR(512)")
     private String fileName;
     
-    @Column(name = "File_Path", nullable = false, length = 1024)
+    @Column(name = "File_Path", nullable = false, length = 1024, columnDefinition = "NVARCHAR(1024)")
     private String filePath;
     
-    @Column(name = "Uploaded_By_Name", length = 255)
+    @Column(name = "Uploaded_By_Name", length = 255, columnDefinition = "NVARCHAR(255)")
     private String uploadedByName;
     
     @Column(name = "Upload_Date")
     private LocalDateTime uploadDate;
     
-    @Column(name = "Status", length = 50)
+    @Column(name = "Status", length = 50, columnDefinition = "NVARCHAR(50)")
     private String status = "pending"; // pending, parsed, error
     
-    @Lob
-    @Column(name = "Note")
+    @Column(name = "Note", columnDefinition = "NVARCHAR(MAX)")
     private String note;
     
     // Constructors

@@ -1,23 +1,17 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { blueprintAPI, examAPI } from '../services/api';
-import BlueprintList from '../components/Exam/BlueprintList';
+import { examAPI } from '../services/api';
 import ExamList from '../components/Exam/ExamList';
-import BlueprintForm from '../components/Exam/BlueprintForm';
-import ExamGenerator from '../components/Exam/ExamGenerator';
 import ExamView from '../components/Exam/ExamView';
 import './ExamPage.css';
 
 function ExamPage() {
-  const [blueprints, setBlueprints] = useState([]);
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('blueprints'); // 'blueprints', 'exams'
-  const [showBlueprintForm, setShowBlueprintForm] = useState(false);
-  const [showExamGenerator, setShowExamGenerator] = useState(false);
   const [showExamView, setShowExamView] = useState(false);
-  const [selectedBlueprint, setSelectedBlueprint] = useState(null);
   const [selectedExam, setSelectedExam] = useState(null);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [numberOfQuestions, setNumberOfQuestions] = useState(40);
 
   useEffect(() => {
     loadData();
@@ -26,74 +20,12 @@ function ExamPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [blueprintsRes, examsRes] = await Promise.all([
-        blueprintAPI.getAll(),
-        examAPI.getAll(),
-      ]);
-      setBlueprints(blueprintsRes.data);
+      const examsRes = await examAPI.getAll();
       setExams(examsRes.data);
     } catch (error) {
       toast.error('Failed to load data: ' + error.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCreateBlueprint = () => {
-    setSelectedBlueprint(null);
-    setShowBlueprintForm(true);
-  };
-
-  const handleEditBlueprint = (blueprint) => {
-    setSelectedBlueprint(blueprint);
-    setShowBlueprintForm(true);
-  };
-
-  const handleBlueprintSave = async (data) => {
-    try {
-      if (selectedBlueprint) {
-        await blueprintAPI.update(selectedBlueprint.id, data);
-        toast.success('Blueprint updated successfully');
-      } else {
-        await blueprintAPI.create(data);
-        toast.success('Blueprint created successfully');
-      }
-      setShowBlueprintForm(false);
-      setSelectedBlueprint(null);
-      loadData();
-    } catch (error) {
-      toast.error('Failed to save blueprint: ' + error.message);
-    }
-  };
-
-  const handleBlueprintDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this blueprint?')) {
-      return;
-    }
-    try {
-      await blueprintAPI.delete(id);
-      toast.success('Blueprint deleted successfully');
-      loadData();
-    } catch (error) {
-      toast.error('Failed to delete blueprint: ' + error.message);
-    }
-  };
-
-  const handleGenerateExam = (blueprint) => {
-    setSelectedBlueprint(blueprint);
-    setShowExamGenerator(true);
-  };
-
-  const handleExamGenerate = async (blueprintId, examName) => {
-    try {
-      await examAPI.generate(blueprintId, examName, 'System');
-      toast.success('Exam generated successfully');
-      setShowExamGenerator(false);
-      setSelectedBlueprint(null);
-      setActiveTab('exams');
-      loadData();
-    } catch (error) {
-      toast.error('Failed to generate exam: ' + error.message);
     }
   };
 
@@ -116,6 +48,72 @@ function ExamPage() {
     } catch (error) {
       toast.error('Failed to export exam: ' + error.message);
     }
+  };
+
+  const handlePrintRandomExam = async (numQuestions, includeAnswers = false) => {
+    console.log('[ExamPage] handlePrintRandomExam called', { numQuestions, includeAnswers });
+    try {
+      console.log('[ExamPage] Calling examAPI.printRandom...');
+      const response = await examAPI.printRandom(numQuestions, includeAnswers);
+      console.log('[ExamPage] API response received', {
+        status: response.status,
+        headers: response.headers,
+        dataType: typeof response.data,
+        dataSize: response.data?.size || response.data?.length || 'unknown'
+      });
+      
+      if (!response.data) {
+        console.error('[ExamPage] Response data is empty!');
+        toast.error('Không nhận được dữ liệu từ server');
+        return;
+      }
+      
+      console.log('[ExamPage] Creating blob URL...');
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      console.log('[ExamPage] Blob URL created:', url);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      const timestamp = new Date().getTime();
+      const filename = `exam_random_${timestamp}.docx`;
+      link.setAttribute('download', filename);
+      console.log('[ExamPage] Download link created with filename:', filename);
+      
+      document.body.appendChild(link);
+      console.log('[ExamPage] Triggering download...');
+      link.click();
+      link.remove();
+      console.log('[ExamPage] Download completed successfully');
+      toast.success(`Đề thi mới với ${numQuestions} câu hỏi đã được tạo và xuất thành công!`);
+      setShowPrintDialog(false);
+    } catch (error) {
+      console.error('[ExamPage] Error in handlePrintRandomExam:', error);
+      console.error('[ExamPage] Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: error.stack
+      });
+      
+      let errorMessage = 'Không thể tạo đề thi';
+      if (error.response?.status === 400) {
+        errorMessage = 'Số câu hỏi không hợp lệ hoặc không đủ câu hỏi trong database.';
+      } else if (error.message) {
+        errorMessage = 'Không thể tạo đề thi: ' + error.message;
+      }
+      
+      toast.error(errorMessage);
+    }
+  };
+
+  const handlePrintDialogSubmit = (e) => {
+    e.preventDefault();
+    if (numberOfQuestions <= 0) {
+      toast.error('Số câu hỏi phải lớn hơn 0');
+      return;
+    }
+    handlePrintRandomExam(numberOfQuestions, false);
   };
 
   const handleExamDelete = async (id) => {
@@ -141,48 +139,18 @@ function ExamPage() {
         <h1>Exam Management</h1>
         <div className="header-actions">
           <button
-            onClick={() => setActiveTab('blueprints')}
-            className={activeTab === 'blueprints' ? 'btn-active' : 'btn-secondary'}
+            onClick={(e) => {
+              console.log('[ExamPage] Print button clicked', e);
+              setShowPrintDialog(true);
+            }}
+            className="btn-primary"
+            title="Tạo đề thi mới với số câu hỏi tùy chọn"
           >
-            Blueprints
-          </button>
-          <button
-            onClick={() => setActiveTab('exams')}
-            className={activeTab === 'exams' ? 'btn-active' : 'btn-secondary'}
-          >
-            Exams
+            📄 Print Đề Thi Mới
           </button>
         </div>
       </div>
 
-      {activeTab === 'blueprints' && (
-        <div className="tab-content">
-          <div className="section-header">
-            <h2>Blueprints</h2>
-            <button onClick={handleCreateBlueprint} className="btn-primary">
-              Create Blueprint
-            </button>
-          </div>
-          {showBlueprintForm && (
-            <BlueprintForm
-              blueprint={selectedBlueprint}
-              onSubmit={handleBlueprintSave}
-              onCancel={() => {
-                setShowBlueprintForm(false);
-                setSelectedBlueprint(null);
-              }}
-            />
-          )}
-          <BlueprintList
-            blueprints={blueprints}
-            onEdit={handleEditBlueprint}
-            onDelete={handleBlueprintDelete}
-            onGenerate={handleGenerateExam}
-          />
-        </div>
-      )}
-
-      {activeTab === 'exams' && (
         <div className="tab-content">
           <div className="section-header">
             <h2>Generated Exams</h2>
@@ -194,18 +162,6 @@ function ExamPage() {
             onDelete={handleExamDelete}
           />
         </div>
-      )}
-
-      {showExamGenerator && selectedBlueprint && (
-        <ExamGenerator
-          blueprint={selectedBlueprint}
-          onGenerate={handleExamGenerate}
-          onCancel={() => {
-            setShowExamGenerator(false);
-            setSelectedBlueprint(null);
-          }}
-        />
-      )}
 
       {showExamView && selectedExam && (
         <ExamView
@@ -217,9 +173,58 @@ function ExamPage() {
           }}
         />
       )}
+
+      {showPrintDialog && (
+        <div className="modal-overlay" onClick={() => setShowPrintDialog(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Tạo Đề Thi Mới</h2>
+              <button
+                onClick={() => setShowPrintDialog(false)}
+                className="btn-close"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handlePrintDialogSubmit} className="modal-body">
+              <div className="form-group">
+                <label htmlFor="numberOfQuestions">
+                  Số câu hỏi muốn tạo:
+                </label>
+                <input
+                  type="number"
+                  id="numberOfQuestions"
+                  min="1"
+                  max="1000"
+                  value={numberOfQuestions}
+                  onChange={(e) => setNumberOfQuestions(parseInt(e.target.value) || 40)}
+                  required
+                  className="form-input"
+                  autoFocus
+                />
+                <small className="form-hint">
+                  Hệ thống sẽ lấy ngẫu nhiên số câu hỏi này từ database. 
+                  Nếu không đủ, sẽ lấy tất cả câu hỏi có sẵn.
+                </small>
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setShowPrintDialog(false)}
+                  className="btn-secondary"
+                >
+                  Hủy
+                </button>
+                <button type="submit" className="btn-primary">
+                  Tạo Đề Thi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default ExamPage;
-
