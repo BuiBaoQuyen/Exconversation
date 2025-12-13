@@ -57,9 +57,9 @@ function ExamView({ exam, onExport, onClose }) {
                       <>
                         <div className="question-content">
                           <h4>{eq.question.title || `Question ${eq.orderNumber}`}</h4>
-                          {eq.question.contentLatex && (
+                          {eq.question.contentMathml && (
                             <MathContentRenderer 
-                              content={eq.question.contentLatex}
+                              content={eq.question.contentMathml}
                               className="content-text"
                             />
                           )}
@@ -72,7 +72,7 @@ function ExamView({ exam, onExport, onClose }) {
                                     key={answer.id}
                                     className={answer.isCorrect ? 'correct' : ''}
                                   >
-                                    {answer.orderLabel}. <MathContentRenderer content={answer.contentLatex} />
+                                    {answer.orderLabel}. <MathContentRenderer content={answer.contentMathml} />
                                     {answer.isCorrect && ' ✓'}
                                   </li>
                                 ))}

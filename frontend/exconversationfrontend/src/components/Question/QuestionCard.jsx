@@ -8,7 +8,7 @@ function QuestionCard({ question, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({
     title: question?.title || '',
-    contentLatex: question?.contentLatex || '',
+    contentMathml: question?.contentMathml || '',
     contentOmml: question?.contentOmml || '',
     chapterName: question?.chapterName || '',
     answers: question?.answers || [],
@@ -20,11 +20,11 @@ function QuestionCard({ question, onUpdate, onDelete }) {
   useEffect(() => {
     if (question && !isEditing) {
       console.log('QuestionCard: Updating data from question prop:', question);
-      console.log('QuestionCard: ContentLatex:', question.contentLatex ? `Length: ${question.contentLatex.length}` : 'null/undefined');
+      console.log('QuestionCard: ContentMathml:', question.contentMathml ? `Length: ${question.contentMathml.length}` : 'null/undefined');
       console.log('QuestionCard: Answers:', question.answers ? `Count: ${question.answers.length}` : 'null/undefined');
       setEditedData({
     title: question.title || '',
-        contentLatex: question.contentLatex || '',
+        contentMathml: question.contentMathml || '',
         contentOmml: question.contentOmml || '',
     chapterName: question.chapterName || '',
     answers: question.answers || [],
@@ -45,7 +45,7 @@ function QuestionCard({ question, onUpdate, onDelete }) {
   const handleCancel = () => {
     setEditedData({
       title: question.title || '',
-      contentLatex: question.contentLatex || '',
+      contentMathml: question.contentMathml || '',
       contentOmml: question.contentOmml || '',
       chapterName: question.chapterName || '',
       answers: question.answers || [],
@@ -61,13 +61,13 @@ function QuestionCard({ question, onUpdate, onDelete }) {
       // Prepare update data
       const updateData = {
         title: editedData.title,
-        contentLatex: editedData.contentLatex,
+        contentMathml: editedData.contentMathml,
         contentOmml: editedData.contentOmml,
         chapterName: editedData.chapterName,
         answers: editedData.answers.map((answer, index) => ({
           id: answer.id,
           orderLabel: answer.orderLabel || ['A', 'B', 'C', 'D'][index] || 'A',
-          contentLatex: answer.contentLatex || '',
+          contentMathml: answer.contentMathml || '',
           contentOmml: answer.contentOmml || '',
           isCorrect: answer.isCorrect || false,
         })),
@@ -93,7 +93,7 @@ function QuestionCard({ question, onUpdate, onDelete }) {
       newAnswers[index] = {
         id: null,
         orderLabel: ['A', 'B', 'C', 'D'][index] || 'A',
-        contentLatex: '',
+        contentMathml: '',
         contentOmml: '',
         isCorrect: false,
       };
@@ -232,18 +232,18 @@ function QuestionCard({ question, onUpdate, onDelete }) {
         </div>
 
         <div className="question-content-section">
-          <label>Nội dung (LaTeX):</label>
+          <label>Nội dung (MathML):</label>
           {isEditing ? (
             <textarea
-              value={editedData.contentLatex || ''}
-              onChange={(e) => handleContentChange('contentLatex', e.target.value)}
+              value={editedData.contentMathml || ''}
+              onChange={(e) => handleContentChange('contentMathml', e.target.value)}
               className="question-content-textarea"
               placeholder="Nhập nội dung câu hỏi..."
               rows={4}
             />
           ) : (
             <MathContentRenderer 
-              content={editedData.contentLatex || ''}
+              content={editedData.contentMathml || ''}
               className="question-content-display"
             />
           )}
@@ -297,7 +297,7 @@ function QuestionCard({ question, onUpdate, onDelete }) {
               const answer = sortedAnswers.find(a => a.orderLabel === label) || {
                 id: null,
                 orderLabel: label,
-                contentLatex: '',
+                contentMathml: '',
                 contentOmml: '',
                 isCorrect: false,
               };
@@ -308,12 +308,12 @@ function QuestionCard({ question, onUpdate, onDelete }) {
                     <span className="answer-label">{label}.</span>
                     {isEditing ? (
                       <>
-                        <label>Đáp án {label} (LaTeX)</label>
+                        <label>Đáp án {label} (MathML)</label>
                         <textarea
-                          value={answer.contentLatex || ''}
-                          onChange={(e) => handleAnswerChange(index, 'contentLatex', e.target.value)}
+                          value={answer.contentMathml || ''}
+                          onChange={(e) => handleAnswerChange(index, 'contentMathml', e.target.value)}
                           className="answer-content-textarea"
-                          placeholder={`Nhập LaTeX đáp án ${label}...`}
+                          placeholder={`Nhập MathML đáp án ${label}...`}
                           rows={2}
                         />
                         <label>Đáp án {label} (OMML)</label>
@@ -337,7 +337,7 @@ function QuestionCard({ question, onUpdate, onDelete }) {
                       <>
                         <div className={`answer-content ${answer.isCorrect ? 'correct-answer' : ''}`}>
                           <MathContentRenderer 
-                            content={answer.contentLatex || `(Chưa có nội dung đáp án ${label})`}
+                            content={answer.contentMathml || `(Chưa có nội dung đáp án ${label})`}
                           />
                         </div>
                         {answer.isCorrect && (

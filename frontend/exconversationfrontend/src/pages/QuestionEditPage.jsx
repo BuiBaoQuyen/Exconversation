@@ -22,7 +22,7 @@ function QuestionEditPage() {
       console.log('Loading question with ID:', id);
       const response = await questionAPI.getById(id);
       console.log('Question loaded:', response.data);
-      console.log('ContentLatex length:', response.data?.contentLatex?.length || 0);
+      console.log('ContentMathml length:', response.data?.contentMathml?.length || 0);
       console.log('Answers count:', response.data?.answers?.length || 0);
       setQuestion(response.data);
     } catch (error) {

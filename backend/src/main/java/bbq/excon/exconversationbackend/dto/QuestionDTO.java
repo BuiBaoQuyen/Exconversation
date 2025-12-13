@@ -11,7 +11,7 @@ public class QuestionDTO {
     private Long currentVersionId;
     private String title;
     private String contentOmml;   // text + OMML
-    private String contentLatex;  // text + LaTeX
+    private String contentMathml;  // text + MathML
     private List<AnswerDTO> answers;
     private List<ImageDTO> images;
     
@@ -79,8 +79,8 @@ public class QuestionDTO {
     public String getContentOmml() { return contentOmml; }
     public void setContentOmml(String contentOmml) { this.contentOmml = contentOmml; }
 
-    public String getContentLatex() { return contentLatex; }
-    public void setContentLatex(String contentLatex) { this.contentLatex = contentLatex; }
+    public String getContentMathml() { return contentMathml; }
+    public void setContentMathml(String contentMathml) { this.contentMathml = contentMathml; }
     
     public List<AnswerDTO> getAnswers() {
         return answers;

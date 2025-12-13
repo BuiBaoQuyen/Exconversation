@@ -22,8 +22,8 @@ public class Answer {
     @Column(name = "Content_OMML", columnDefinition = "NVARCHAR(MAX)")
     private String contentOmml;
 
-    @Column(name = "Content_LaTeX", columnDefinition = "NVARCHAR(MAX)")
-    private String contentLatex;
+    @Column(name = "Content_MathML", columnDefinition = "NVARCHAR(MAX)")
+    private String contentMathml;
     
     @Column(name = "Is_Correct")
     private Boolean isCorrect = false;
@@ -64,8 +64,8 @@ public class Answer {
     public String getContentOmml() { return contentOmml; }
     public void setContentOmml(String contentOmml) { this.contentOmml = contentOmml; }
 
-    public String getContentLatex() { return contentLatex; }
-    public void setContentLatex(String contentLatex) { this.contentLatex = contentLatex; }
+    public String getContentMathml() { return contentMathml; }
+    public void setContentMathml(String contentMathml) { this.contentMathml = contentMathml; }
     
     public Boolean getIsCorrect() {
         return isCorrect;

@@ -4,7 +4,7 @@ public class AnswerDTO {
     private Long id;
     private String orderLabel;
     private String contentOmml;
-    private String contentLatex;
+    private String contentMathml;
     private Boolean isCorrect;
     
     // Constructors
@@ -31,8 +31,8 @@ public class AnswerDTO {
     public String getContentOmml() { return contentOmml; }
     public void setContentOmml(String contentOmml) { this.contentOmml = contentOmml; }
 
-    public String getContentLatex() { return contentLatex; }
-    public void setContentLatex(String contentLatex) { this.contentLatex = contentLatex; }
+    public String getContentMathml() { return contentMathml; }
+    public void setContentMathml(String contentMathml) { this.contentMathml = contentMathml; }
     
     public Boolean getIsCorrect() {
         return isCorrect;

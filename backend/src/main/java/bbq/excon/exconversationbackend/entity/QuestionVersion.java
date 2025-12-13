@@ -25,8 +25,8 @@ public class QuestionVersion {
     @Column(name = "Content_OMML", columnDefinition = "NVARCHAR(MAX)")
     private String contentOmml; // OMML + text
 
-    @Column(name = "Content_LaTeX", columnDefinition = "NVARCHAR(MAX)")
-    private String contentLatex; // LaTeX + text
+    @Column(name = "Content_MathML", columnDefinition = "NVARCHAR(MAX)")
+    private String contentMathml; // MathML + text
     
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
@@ -78,8 +78,8 @@ public class QuestionVersion {
     public String getContentOmml() { return contentOmml; }
     public void setContentOmml(String contentOmml) { this.contentOmml = contentOmml; }
 
-    public String getContentLatex() { return contentLatex; }
-    public void setContentLatex(String contentLatex) { this.contentLatex = contentLatex; }
+    public String getContentMathml() { return contentMathml; }
+    public void setContentMathml(String contentMathml) { this.contentMathml = contentMathml; }
     
     public LocalDateTime getCreatedAt() {
         return createdAt;

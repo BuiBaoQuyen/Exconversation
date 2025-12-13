@@ -36,7 +36,7 @@ public class QuestionService {
     private ChapterRepository chapterRepository;
     
     @Autowired
-    private OMMLToMathMLConverter ommlToMathMLConverter;
+    private OMMLToMathMLConverterService ommlToMathMLConverterService;
     
     /**
      * Get all questions (without content to save memory)
@@ -97,8 +97,8 @@ public class QuestionService {
             
             QuestionDTO dto = convertToDTO(question);
             
-            System.out.println("QuestionDTO created - ContentLatex length: " + 
-                             (dto.getContentLatex() != null ? dto.getContentLatex().length() : 0) + 
+            System.out.println("QuestionDTO created - ContentMathml length: " + 
+                             (dto.getContentMathml() != null ? dto.getContentMathml().length() : 0) + 
                              ", Answers count: " + (dto.getAnswers() != null ? dto.getAnswers().size() : 0));
             
             return Optional.of(dto);
@@ -169,18 +169,18 @@ public class QuestionService {
                     if (dto.getTitle() != null) {
                         version.setTitle(dto.getTitle());
                     }
-                    // Prefer contentLatex/contentOmml from DTO
+                    // Prefer contentMathml/contentOmml from DTO
                     if (dto.getContentOmml() != null) {
                         version.setContentOmml(dto.getContentOmml());
                     }
-                    if (dto.getContentLatex() != null) {
-                        version.setContentLatex(dto.getContentLatex());
+                    if (dto.getContentMathml() != null) {
+                        version.setContentMathml(dto.getContentMathml());
                     }
-                    // Auto-convert nếu thiếu LaTeX nhưng có OMML
-                    if ((version.getContentLatex() == null || version.getContentLatex().trim().isEmpty())
+                    // Auto-convert nếu thiếu MathML nhưng có OMML
+                    if ((version.getContentMathml() == null || version.getContentMathml().trim().isEmpty())
                             && version.getContentOmml() != null && !version.getContentOmml().trim().isEmpty()) {
-                        String latex = ommlToMathMLConverter.convertContentOMMLToMathML(version.getContentOmml());
-                        version.setContentLatex((latex != null && !latex.trim().isEmpty()) ? latex : null);
+                        String mathml = ommlToMathMLConverterService.convertContentOMMLToMathML(version.getContentOmml());
+                        version.setContentMathml((mathml != null && !mathml.trim().isEmpty()) ? mathml : null);
                     }
                     questionVersionRepository.save(version);
                     
@@ -211,11 +211,11 @@ public class QuestionService {
             answer.setQuestionVersion(version);
             answer.setOrderLabel(answerDTO.getOrderLabel());
             answer.setContentOmml(answerDTO.getContentOmml());
-            answer.setContentLatex(answerDTO.getContentLatex());
-            if ((answer.getContentLatex() == null || answer.getContentLatex().trim().isEmpty())
+            answer.setContentMathml(answerDTO.getContentMathml());
+            if ((answer.getContentMathml() == null || answer.getContentMathml().trim().isEmpty())
                     && answer.getContentOmml() != null && !answer.getContentOmml().trim().isEmpty()) {
-                String latex = ommlToMathMLConverter.convertContentOMMLToMathML(answer.getContentOmml());
-                answer.setContentLatex((latex != null && !latex.trim().isEmpty()) ? latex : null);
+                String mathml = ommlToMathMLConverterService.convertContentOMMLToMathML(answer.getContentOmml());
+                answer.setContentMathml((mathml != null && !mathml.trim().isEmpty()) ? mathml : null);
             }
             answer.setIsCorrect(answerDTO.getIsCorrect() != null ? answerDTO.getIsCorrect() : false);
             answerRepository.save(answer);
@@ -238,11 +238,11 @@ public class QuestionService {
             version.setVersionNumber(newVersionNumber);
             version.setTitle(dto.getTitle());
             version.setContentOmml(dto.getContentOmml());
-            version.setContentLatex(dto.getContentLatex());
-            if ((version.getContentLatex() == null || version.getContentLatex().trim().isEmpty())
+            version.setContentMathml(dto.getContentMathml());
+            if ((version.getContentMathml() == null || version.getContentMathml().trim().isEmpty())
                     && version.getContentOmml() != null && !version.getContentOmml().trim().isEmpty()) {
-                String latex = ommlToMathMLConverter.convertContentOMMLToMathML(version.getContentOmml());
-                version.setContentLatex((latex != null && !latex.trim().isEmpty()) ? latex : null);
+                String mathml = ommlToMathMLConverterService.convertContentOMMLToMathML(version.getContentOmml());
+                version.setContentMathml((mathml != null && !mathml.trim().isEmpty()) ? mathml : null);
             }
             version.setCreatedByName("System");
             version.setIsPublished(false);
@@ -255,7 +255,7 @@ public class QuestionService {
                     answer.setQuestionVersion(version);
                     answer.setOrderLabel(answerDTO.getOrderLabel());
                     answer.setContentOmml(answerDTO.getContentOmml());
-                    answer.setContentLatex(answerDTO.getContentLatex());
+                    answer.setContentMathml(answerDTO.getContentMathml());
                     answer.setIsCorrect(answerDTO.getIsCorrect() != null ? answerDTO.getIsCorrect() : false);
                     answerRepository.save(answer);
                 }
@@ -311,22 +311,22 @@ public class QuestionService {
                 dto.setCurrentVersionId(version.getId());
                 dto.setTitle(version.getTitle() != null ? version.getTitle() : "");
                 
-                // Ưu tiên contentLatex -> FE render trực tiếp
-                String contentLatex = version.getContentLatex();
-                if (contentLatex == null || contentLatex.trim().isEmpty()) {
+                // Ưu tiên contentMathml -> FE render trực tiếp
+                String contentMathml = version.getContentMathml();
+                if (contentMathml == null || contentMathml.trim().isEmpty()) {
                     // Fallback: convert từ OMML nếu chưa có
                     String omml = version.getContentOmml();
                     if (omml != null && !omml.trim().isEmpty()) {
-                        contentLatex = ommlToMathMLConverter.convertContentOMMLToMathML(omml);
+                        contentMathml = ommlToMathMLConverterService.convertContentOMMLToMathML(omml);
                     }
                 }
-                dto.setContentLatex(contentLatex != null ? contentLatex : "");
+                dto.setContentMathml(contentMathml != null ? contentMathml : "");
 
                 // Trả kèm OMML để FE có thể dùng khi cần (optional)
                 dto.setContentOmml(version.getContentOmml());
 
                 System.out.println("Loaded content for question " + question.getId() + 
-                                 " - Length: " + (dto.getContentLatex() != null ? dto.getContentLatex().length() : 0));
+                                 " - Length: " + (dto.getContentMathml() != null ? dto.getContentMathml().length() : 0));
                 
                 // Get answers with content
                 try {
@@ -353,7 +353,7 @@ public class QuestionService {
                 }
             } else {
                 System.out.println("WARNING: No version found for question " + question.getId());
-                dto.setContentLatex("");
+                dto.setContentMathml("");
                 dto.setContentOmml("");
                 dto.setAnswers(new ArrayList<>());
                 dto.setImages(new ArrayList<>());
@@ -368,7 +368,7 @@ public class QuestionService {
             dto.setId(question.getId());
             dto.setType(question.getType());
             dto.setIsActive(question.getIsActive());
-            dto.setContentLatex("");
+            dto.setContentMathml("");
             dto.setContentOmml("");
             dto.setAnswers(new ArrayList<>());
             dto.setImages(new ArrayList<>());
@@ -406,7 +406,7 @@ public class QuestionService {
             dto.setCurrentVersionId(version.getId());
             dto.setTitle(version.getTitle());
             // DO NOT load content to save memory
-            dto.setContentLatex(null);
+            dto.setContentMathml(null);
             dto.setContentOmml(null);
             
             // DO NOT load answers and images to save memory
@@ -422,15 +422,15 @@ public class QuestionService {
         dto.setId(answer.getId());
         dto.setOrderLabel(answer.getOrderLabel());
 
-        // Ưu tiên LaTeX
-        String latex = answer.getContentLatex();
-        if (latex == null || latex.trim().isEmpty()) {
+        // Ưu tiên MathML
+        String mathml = answer.getContentMathml();
+        if (mathml == null || mathml.trim().isEmpty()) {
             String omml = answer.getContentOmml();
             if (omml != null && !omml.trim().isEmpty()) {
-                latex = ommlToMathMLConverter.convertContentOMMLToMathML(omml);
+                mathml = ommlToMathMLConverterService.convertContentOMMLToMathML(omml);
             }
         }
-        dto.setContentLatex(latex);
+        dto.setContentMathml(mathml);
         dto.setContentOmml(answer.getContentOmml());
 
         dto.setIsCorrect(answer.getIsCorrect());

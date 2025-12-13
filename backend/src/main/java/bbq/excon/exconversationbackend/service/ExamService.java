@@ -95,8 +95,8 @@ public class ExamService {
         dto.setIsActive(question.getIsActive());
         dto.setCurrentVersionId(version.getId());
         dto.setTitle(version.getTitle());
-        // Prefer LaTeX for display; keep OMML if needed by caller
-        dto.setContentLatex(version.getContentLatex());
+        // Prefer MathML for display; keep OMML if needed by caller
+        dto.setContentMathml(version.getContentMathml());
         dto.setContentOmml(version.getContentOmml());
         
         if (question.getChapter() != null) {

@@ -3,7 +3,7 @@ package bbq.excon.exconversationbackend.parser;
 import bbq.excon.exconversationbackend.entity.*;
 import bbq.excon.exconversationbackend.repository.*;
 import bbq.excon.exconversationbackend.service.MathMLConverterService;
-import bbq.excon.exconversationbackend.service.OMMLToMathMLConverter;
+import bbq.excon.exconversationbackend.service.OMMLToMathMLConverterService;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class DocumentParserService {
     private MathMLConverterService mathMLConverterService;
 
     @Autowired
-    private OMMLToMathMLConverter ommlToMathMLConverter;
+    private OMMLToMathMLConverterService ommlToMathMLConverterService;
     
     /**
      * Parse Word document và extract questions
@@ -96,10 +96,10 @@ public class DocumentParserService {
                         String contentOmml = mathMLConverterService.extractContentWithMath(para);
                         
                         if (contentOmml != null && !contentOmml.trim().isEmpty()) {
-                            // Convert sang LaTeX cho FE hiển thị
-                            String contentLatex = ommlToMathMLConverter.convertContentOMMLToMathML(contentOmml);
-                            if (contentLatex != null && contentLatex.trim().isEmpty()) {
-                                contentLatex = null; // tránh lưu OMML hỏng vào cột LaTeX
+                            // Convert sang MathML cho FE hiển thị
+                            String contentMathml = ommlToMathMLConverterService.convertContentOMMLToMathML(contentOmml);
+                            if (contentMathml != null && contentMathml.trim().isEmpty()) {
+                                contentMathml = null; // tránh lưu MathML hỏng
                             }
                             
                             // Create Question
@@ -116,7 +116,7 @@ public class DocumentParserService {
                             version.setVersionNumber(1);
                             version.setTitle("Câu " + questionNumber);
                             version.setContentOmml(contentOmml); // Format: "Text <omml>...</omml> Text"
-                            version.setContentLatex(contentLatex);
+                            version.setContentMathml(contentMathml); // Format: "Text <math>...</math> Text"
                             version.setCreatedByName(upload.getUploadedByName());
                             version.setIsPublished(false);
                             questionVersionRepository.save(version);

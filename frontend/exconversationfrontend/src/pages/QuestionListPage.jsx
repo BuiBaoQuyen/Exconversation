@@ -84,7 +84,7 @@ function QuestionListPage() {
       console.log('QuestionListPage: Parsed questions:', questions);
       if (questions.length > 0) {
         console.log('QuestionListPage: First question structure:', questions[0]);
-        console.log('QuestionListPage: First question contentLatex:', questions[0].contentLatex);
+        console.log('QuestionListPage: First question contentMathml:', questions[0].contentMathml);
         console.log('QuestionListPage: First question answers:', questions[0].answers);
       }
       
