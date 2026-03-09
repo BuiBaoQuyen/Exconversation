@@ -19,27 +19,28 @@ import org.springframework.data.domain.Pageable;
 
 @Service
 public class QuestionService {
-    
+
     @Autowired
     private QuestionRepository questionRepository;
-    
+
     @Autowired
     private QuestionVersionRepository questionVersionRepository;
-    
+
     @Autowired
     private AnswerRepository answerRepository;
-    
+
     @Autowired
     private ImageRepository imageRepository;
-    
+
     @Autowired
     private ChapterRepository chapterRepository;
-    
+
     @Autowired
     private OMMLToMathMLConverterService ommlToMathMLConverterService;
-    
+
     /**
      * Get all questions (without content to save memory)
+     * 
      * @deprecated Use getAllQuestionsPaginated instead for better performance
      */
     @Deprecated
@@ -48,7 +49,7 @@ public class QuestionService {
                 .map(this::convertToDTOWithoutContent)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Get all questions with pagination (with full content for display)
      */
@@ -57,9 +58,10 @@ public class QuestionService {
         Page<Question> questionPage = questionRepository.findByIsActiveTrue(pageable);
         return questionPage.map(this::convertToDTO);
     }
-    
+
     /**
      * Get questions by chapter (without content to save memory)
+     * 
      * @deprecated Use getQuestionsByChapterPaginated instead for better performance
      */
     @Deprecated
@@ -68,7 +70,7 @@ public class QuestionService {
                 .map(this::convertToDTOWithoutContent)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Get questions by chapter with pagination (with full content for display)
      */
@@ -77,7 +79,7 @@ public class QuestionService {
         Page<Question> questionPage = questionRepository.findByChapterIdAndIsActiveTrue(chapterId, pageable);
         return questionPage.map(this::convertToDTO);
     }
-    
+
     /**
      * Get question by ID
      */
@@ -85,22 +87,22 @@ public class QuestionService {
         try {
             System.out.println("Fetching question by ID: " + id);
             Optional<Question> questionOpt = questionRepository.findById(id);
-            
+
             if (!questionOpt.isPresent()) {
                 System.out.println("Question not found: " + id);
                 return Optional.empty();
             }
-            
+
             Question question = questionOpt.get();
-            System.out.println("Question found: " + question.getId() + ", Chapter: " + 
-                             (question.getChapter() != null ? question.getChapter().getChapterName() : "null"));
-            
+            System.out.println("Question found: " + question.getId() + ", Chapter: " +
+                    (question.getChapter() != null ? question.getChapter().getChapterName() : "null"));
+
             QuestionDTO dto = convertToDTO(question);
-            
-            System.out.println("QuestionDTO created - ContentMathml length: " + 
-                             (dto.getContentMathml() != null ? dto.getContentMathml().length() : 0) + 
-                             ", Answers count: " + (dto.getAnswers() != null ? dto.getAnswers().size() : 0));
-            
+
+            System.out.println("QuestionDTO created - ContentMathml length: " +
+                    (dto.getContentMathml() != null ? dto.getContentMathml().length() : 0) +
+                    ", Answers count: " + (dto.getAnswers() != null ? dto.getAnswers().size() : 0));
+
             return Optional.of(dto);
         } catch (Exception e) {
             System.err.println("ERROR fetching question by ID " + id + ": " + e.getMessage());
@@ -108,7 +110,7 @@ public class QuestionService {
             return Optional.empty();
         }
     }
-    
+
     /**
      * Update question
      */
@@ -116,19 +118,19 @@ public class QuestionService {
     public Optional<QuestionDTO> updateQuestion(Long id, QuestionDTO dto) {
         return questionRepository.findById(id).map(question -> {
             // Update chapter if changed
-            if (dto.getChapterId() != null && 
-                (question.getChapter() == null || !question.getChapter().getId().equals(dto.getChapterId()))) {
+            if (dto.getChapterId() != null &&
+                    (question.getChapter() == null || !question.getChapter().getId().equals(dto.getChapterId()))) {
                 Chapter chapter = chapterRepository.findById(dto.getChapterId())
                         .orElse(null);
                 question.setChapter(chapter);
             }
-            
+
             // Update chapter name if provided (create or update chapter)
             if (dto.getChapterName() != null && !dto.getChapterName().trim().isEmpty()) {
                 // Try to find existing chapter by name
                 Chapter existingChapter = chapterRepository.findByChapterName(dto.getChapterName())
                         .orElse(null);
-                
+
                 if (existingChapter == null) {
                     // Create new chapter if not exists
                     existingChapter = new Chapter();
@@ -146,22 +148,22 @@ public class QuestionService {
                     }
                     existingChapter = chapterRepository.save(existingChapter);
                 }
-                
+
                 question.setChapter(existingChapter);
             }
-            
+
             // Update type if changed
             if (dto.getType() != null) {
                 question.setType(dto.getType());
             }
-            
+
             // Update isActive if changed
             if (dto.getIsActive() != null) {
                 question.setIsActive(dto.getIsActive());
             }
-            
+
             questionRepository.save(question);
-            
+
             // Update current version if exists
             if (dto.getCurrentVersionId() != null) {
                 Optional<QuestionVersion> versionOpt = questionVersionRepository.findById(dto.getCurrentVersionId());
@@ -179,32 +181,33 @@ public class QuestionService {
                     // Auto-convert nếu thiếu MathML nhưng có OMML
                     if ((version.getContentMathml() == null || version.getContentMathml().trim().isEmpty())
                             && version.getContentOmml() != null && !version.getContentOmml().trim().isEmpty()) {
-                        String mathml = ommlToMathMLConverterService.convertContentOMMLToMathML(version.getContentOmml());
+                        String mathml = ommlToMathMLConverterService
+                                .convertContentOMMLToMathML(version.getContentOmml());
                         version.setContentMathml((mathml != null && !mathml.trim().isEmpty()) ? mathml : null);
                     }
                     questionVersionRepository.save(version);
-                    
+
                     // Update answers
                     if (dto.getAnswers() != null) {
                         updateAnswers(version, dto.getAnswers());
                     }
                 });
             }
-            
+
             return convertToDTO(question);
         });
     }
-    
+
     /**
      * Update answers
      */
     private void updateAnswers(QuestionVersion version, List<AnswerDTO> answerDTOs) {
         // Get existing answers
         List<Answer> existingAnswers = answerRepository.findByQuestionVersionId(version.getId());
-        
+
         // Delete existing answers
         answerRepository.deleteAll(existingAnswers);
-        
+
         // Create new answers
         for (AnswerDTO answerDTO : answerDTOs) {
             Answer answer = new Answer();
@@ -221,7 +224,7 @@ public class QuestionService {
             answerRepository.save(answer);
         }
     }
-    
+
     /**
      * Create new question version
      */
@@ -231,7 +234,7 @@ public class QuestionService {
             // Get latest version number
             List<QuestionVersion> versions = questionVersionRepository.findByQuestionId(questionId);
             int newVersionNumber = versions.size() + 1;
-            
+
             // Create new version
             QuestionVersion version = new QuestionVersion();
             version.setQuestion(question);
@@ -247,7 +250,7 @@ public class QuestionService {
             version.setCreatedByName("System");
             version.setIsPublished(false);
             version = questionVersionRepository.save(version);
-            
+
             // Create answers
             if (dto.getAnswers() != null) {
                 for (AnswerDTO answerDTO : dto.getAnswers()) {
@@ -260,11 +263,11 @@ public class QuestionService {
                     answerRepository.save(answer);
                 }
             }
-            
+
             return version;
         });
     }
-    
+
     /**
      * Delete question (soft delete)
      */
@@ -279,7 +282,7 @@ public class QuestionService {
         }
         return false;
     }
-    
+
     /**
      * Convert Question entity to DTO (with full content - for detail view)
      */
@@ -289,28 +292,28 @@ public class QuestionService {
             dto.setId(question.getId());
             dto.setType(question.getType());
             dto.setIsActive(question.getIsActive());
-            
+
             if (question.getChapter() != null) {
                 dto.setChapterId(question.getChapter().getId());
                 dto.setChapterName(question.getChapter().getChapterName());
             }
-            
+
             // Get published version or latest version
             Optional<QuestionVersion> versionOpt = questionVersionRepository
                     .findByQuestionIdAndIsPublishedTrue(question.getId());
-            
+
             if (!versionOpt.isPresent()) {
                 List<QuestionVersion> versions = questionVersionRepository.findByQuestionId(question.getId());
                 if (!versions.isEmpty()) {
                     versionOpt = Optional.of(versions.get(versions.size() - 1));
                 }
             }
-            
+
             if (versionOpt.isPresent()) {
                 QuestionVersion version = versionOpt.get();
                 dto.setCurrentVersionId(version.getId());
                 dto.setTitle(version.getTitle() != null ? version.getTitle() : "");
-                
+
                 // Ưu tiên contentMathml -> FE render trực tiếp
                 String contentMathml = version.getContentMathml();
                 if (contentMathml == null || contentMathml.trim().isEmpty()) {
@@ -325,22 +328,20 @@ public class QuestionService {
                 // Trả kèm OMML để FE có thể dùng khi cần (optional)
                 dto.setContentOmml(version.getContentOmml());
 
-                System.out.println("Loaded content for question " + question.getId() + 
-                                 " - Length: " + (dto.getContentMathml() != null ? dto.getContentMathml().length() : 0));
-                
                 // Get answers with content
                 try {
                     List<Answer> answers = answerRepository.findByQuestionVersionIdOrderByOrderLabel(version.getId());
                     dto.setAnswers(answers.stream()
                             .map(this::convertAnswerToDTO)
                             .collect(Collectors.toList()));
-                    System.out.println("Loaded " + answers.size() + " answers for question " + question.getId());
+
                 } catch (Exception e) {
-                    System.err.println("ERROR loading answers for question " + question.getId() + ": " + e.getMessage());
+                    System.err
+                            .println("ERROR loading answers for question " + question.getId() + ": " + e.getMessage());
                     e.printStackTrace();
                     dto.setAnswers(new ArrayList<>());
                 }
-                
+
                 // Get images
                 try {
                     List<Image> images = imageRepository.findByQuestionVersionId(version.getId());
@@ -358,7 +359,7 @@ public class QuestionService {
                 dto.setAnswers(new ArrayList<>());
                 dto.setImages(new ArrayList<>());
             }
-            
+
             return dto;
         } catch (Exception e) {
             System.err.println("ERROR converting Question to DTO: " + e.getMessage());
@@ -375,7 +376,7 @@ public class QuestionService {
             return dto;
         }
     }
-    
+
     /**
      * Convert Question entity to DTO without content (for list view - saves memory)
      */
@@ -384,23 +385,23 @@ public class QuestionService {
         dto.setId(question.getId());
         dto.setType(question.getType());
         dto.setIsActive(question.getIsActive());
-        
+
         if (question.getChapter() != null) {
             dto.setChapterId(question.getChapter().getId());
             dto.setChapterName(question.getChapter().getChapterName());
         }
-        
+
         // Get published version or latest version
         Optional<QuestionVersion> versionOpt = questionVersionRepository
                 .findByQuestionIdAndIsPublishedTrue(question.getId());
-        
+
         if (!versionOpt.isPresent()) {
             List<QuestionVersion> versions = questionVersionRepository.findByQuestionId(question.getId());
             if (!versions.isEmpty()) {
                 versionOpt = Optional.of(versions.get(versions.size() - 1));
             }
         }
-        
+
         if (versionOpt.isPresent()) {
             QuestionVersion version = versionOpt.get();
             dto.setCurrentVersionId(version.getId());
@@ -408,15 +409,15 @@ public class QuestionService {
             // DO NOT load content to save memory
             dto.setContentMathml(null);
             dto.setContentOmml(null);
-            
+
             // DO NOT load answers and images to save memory
             dto.setAnswers(null);
             dto.setImages(null);
         }
-        
+
         return dto;
     }
-    
+
     private AnswerDTO convertAnswerToDTO(Answer answer) {
         AnswerDTO dto = new AnswerDTO();
         dto.setId(answer.getId());
@@ -436,7 +437,7 @@ public class QuestionService {
         dto.setIsCorrect(answer.getIsCorrect());
         return dto;
     }
-    
+
     private ImageDTO convertImageToDTO(Image image) {
         ImageDTO dto = new ImageDTO();
         dto.setId(image.getId());
@@ -445,4 +446,3 @@ public class QuestionService {
         return dto;
     }
 }
-

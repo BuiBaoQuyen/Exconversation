@@ -244,6 +244,7 @@ function QuestionCard({ question, onUpdate, onDelete }) {
           ) : (
             <MathContentRenderer 
               content={editedData.contentMathml || ''}
+              images={editedData.images || []}
               className="question-content-display"
             />
           )}
@@ -261,30 +262,39 @@ function QuestionCard({ question, onUpdate, onDelete }) {
           )}
         </div>
 
-        {/* Images */}
-        {editedData.images && editedData.images.length > 0 && (
+        {/* Images fallback cho câu hỏi cũ chưa có placeholder [IMAGE:] trong content */}
+        {editedData.images && editedData.images.length > 0 &&
+          !(editedData.contentMathml || '').includes('[IMAGE:') && (
           <div className="question-images-section">
             <label>Hình ảnh:</label>
             <div className="images-grid">
-              {editedData.images.map((image, idx) => (
-                <div key={image.id || idx} className="image-item">
-                  <img
-                    src={`http://localhost:8080${image.imagePath}`}
-                    alt={image.description || 'Question image'}
-                    className="question-image"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'block';
-                    }}
-                  />
-                  <div className="image-placeholder" style={{ display: 'none' }}>
-                    Image not found
+              {editedData.images.map((image, idx) => {
+                const getImageUrl = (imagePath) => {
+                  if (!imagePath) return '';
+                  let path = imagePath.replace(/^\.\//, '').replace(/^\.\\/, '');
+                  path = path.replace(/^uploads[\/\\]images[\/\\]/, '');
+                  path = path.replace(/^\.\/uploads[\/\\]images[\/\\]/, '');
+                  const imagesIndex = path.indexOf('images/');
+                  if (imagesIndex >= 0) {
+                    path = path.substring(imagesIndex + 'images/'.length);
+                  }
+                  path = path.replace(/\\/g, '/');
+                  return `http://localhost:8080/api/images/${path}`;
+                };
+                return (
+                  <div key={image.id || idx} className="image-item">
+                    <img
+                      src={getImageUrl(image.imagePath)}
+                      alt={image.description || 'Question image'}
+                      className="question-image"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                    {image.description && (
+                      <div className="image-description">{image.description}</div>
+                    )}
                   </div>
-                  {image.description && (
-                    <div className="image-description">{image.description}</div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

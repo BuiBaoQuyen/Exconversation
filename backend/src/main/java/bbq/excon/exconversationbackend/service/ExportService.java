@@ -55,6 +55,9 @@ public class ExportService {
     @Value("${file.export-dir}")
     private String exportDir;
     
+    @Value("${file.images-dir}")
+    private String imagesDir;
+    
     /**
      * Export exam to DOCX file
      */
@@ -233,10 +236,37 @@ public class ExportService {
     private void addImage(XWPFDocument document, String imagePath) {
         try {
             logger.debug("Adding image: {}", imagePath);
-            Path path = Paths.get(imagePath);
+            Path path = null;
             
+            // Try as absolute path first
+            path = Paths.get(imagePath);
             if (!Files.exists(path)) {
-                logger.warn("Image file not found: {}", path.toAbsolutePath());
+                // Try as relative path from current directory
+                path = Paths.get(System.getProperty("user.dir"), imagePath);
+            }
+            if (!Files.exists(path)) {
+                // Try removing leading "./" if present
+                String cleanedPath = imagePath.replaceFirst("^\\./", "").replaceFirst("^\\.\\\\", "");
+                path = Paths.get(cleanedPath);
+            }
+            if (!Files.exists(path)) {
+                // Try with configured images directory (if path is relative to images dir)
+                if (imagePath.contains("images/") || imagePath.contains("images\\")) {
+                    int imagesIndex = Math.max(imagePath.indexOf("images/"), imagePath.indexOf("images\\"));
+                    if (imagesIndex >= 0) {
+                        String separator = imagePath.contains("images/") ? "/" : "\\";
+                        String relativePath = imagePath.substring(imagesIndex + ("images" + separator).length());
+                        path = Paths.get(imagesDir, relativePath);
+                    }
+                } else {
+                    // Try as relative path from images directory
+                    path = Paths.get(imagesDir, imagePath);
+                }
+            }
+            
+            if (path == null || !Files.exists(path)) {
+                logger.warn("Image file not found: {} (tried: {})", imagePath, 
+                    path != null ? path.toAbsolutePath() : "null");
                 return;
             }
             

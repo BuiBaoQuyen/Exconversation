@@ -63,7 +63,7 @@ public class ActionLog {
     public String getReferenceTable() {
         return referenceTable;
     }
-    
+
     public void setReferenceTable(String referenceTable) {
         this.referenceTable = referenceTable;
     }

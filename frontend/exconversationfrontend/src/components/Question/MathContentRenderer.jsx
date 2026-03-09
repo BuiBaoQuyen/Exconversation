@@ -41,11 +41,43 @@ function processMathMLContent(text) {
   return result;
 }
 
-function MathContentRenderer({ content, className = '' }) {
+/**
+ * Chuyển imagePath từ DB thành URL API để hiển thị ảnh
+ */
+function buildImageUrl(imagePath) {
+  if (!imagePath) return '';
+  let path = imagePath.replace(/^\.\//, '').replace(/^\.\\/, '');
+  path = path.replace(/^uploads[\/\\]images[\/\\]/, '');
+  path = path.replace(/^\.\/uploads[\/\\]images[\/\\]/, '');
+  const imagesIndex = path.indexOf('images/');
+  if (imagesIndex >= 0) {
+    path = path.substring(imagesIndex + 'images/'.length);
+  }
+  path = path.replace(/\\/g, '/');
+  return `http://localhost:8080/api/images/${path}`;
+}
+
+/**
+ * Thay placeholder [IMAGE:{id}] bằng thẻ <img> tương ứng
+ * images: array ImageDTO { id, imagePath, description }
+ */
+function replaceImagePlaceholders(content, images) {
+  if (!content || !images || images.length === 0) return content;
+  return content.replace(/\[IMAGE:(\d+)\]/g, (match, idStr) => {
+    const id = parseInt(idStr, 10);
+    const img = images.find(i => i.id === id);
+    if (!img) return match; // placeholder nhưng không tìm thấy ảnh → giữ nguyên
+    const src = buildImageUrl(img.imagePath);
+    const alt = img.description || 'Question image';
+    return `<img src="${src}" alt="${alt}" class="inline-question-image" style="max-width:100%;display:block;margin:8px auto;" onerror="this.style.display='none'" />`;
+  });
+}
+
+function MathContentRenderer({ content, images = [], className = '' }) {
   const containerRef = useRef(null);
   const mathJaxLoaded = useRef(false);
 
-  // Process content: Backend đã convert OMML sang MathML, cần đảm bảo MathML tags đúng format
+  // Process content: thay placeholder ảnh + đảm bảo MathML namespace đúng
   const processedContent = useMemo(() => {
     if (!content) {
       console.log('MathContentRenderer: No content provided');
@@ -55,14 +87,17 @@ function MathContentRenderer({ content, className = '' }) {
     console.log('MathContentRenderer: Original content length:', content.length);
     console.log('MathContentRenderer: Original content preview:', content.substring(0, 200));
 
-    // Process MathML content: đảm bảo namespace và format đúng
-    let processed = processMathMLContent(content);
+    // Bước 1: Thay [IMAGE:{id}] → <img> inline
+    let processed = replaceImagePlaceholders(content, images);
+
+    // Bước 2: Process MathML content: đảm bảo namespace và format đúng
+    processed = processMathMLContent(processed);
 
     console.log('MathContentRenderer: Processed content length:', processed.length);
     console.log('MathContentRenderer: Processed content preview:', processed.substring(0, 300));
     
     return processed;
-  }, [content]);
+  }, [content, images]);
 
   // Load và setup MathJax
   useEffect(() => {
@@ -137,26 +172,24 @@ function MathContentRenderer({ content, className = '' }) {
     return () => clearTimeout(timer);
   }, [processedContent]);
 
-  // Escape HTML để tránh XSS, nhưng giữ nguyên MathML tags
+  // Escape HTML để tránh XSS, nhưng giữ nguyên MathML tags và <img> tags đã được nhúng
   const escapedContent = useMemo(() => {
     if (!processedContent) return '';
     
-    // Strategy: Escape HTML nhưng giữ nguyên MathML tags
-    // Split by MathML tags, escape text parts, keep MathML parts unchanged
-    const mathMLTagPattern = /(<math[^>]*>[\s\S]*?<\/math>)/gi;
-    const parts = processedContent.split(mathMLTagPattern);
+    // Split by MathML tags và <img> tags (đã được nhúng sẵn), escape phần còn lại
+    const safeTagPattern = /(<math[^>]*>[\s\S]*?<\/math>|<img\s[^>]*?\/>|<img\s[^>]*?>)/gi;
+    const parts = processedContent.split(safeTagPattern);
     
     return parts.map((part) => {
-      // Nếu là MathML tag, giữ nguyên (đã được escape đúng cách từ backend)
-      if (part.trim().startsWith('<math')) {
+      // Nếu là MathML hoặc img tag, giữ nguyên
+      if (part.trim().startsWith('<math') || part.trim().startsWith('<img')) {
         return part;
       }
-      // Nếu không, escape HTML nhưng giữ nguyên các ký tự đã được escape
-      // Chỉ escape các ký tự chưa được escape
+      // Escape HTML cho phần text thuần
       return part
         .replace(/&(?!amp;|lt;|gt;|quot;|apos;|nbsp;)/g, '&amp;')
-        .replace(/<(?!\/?math\b)/g, '&lt;')
-        .replace(/(?<!<\/math)>/g, '&gt;')
+        .replace(/<(?!\/?math\b)(?!img\b)/g, '&lt;')
+        .replace(/(?<!<\/math)(?<!<img[^>]*)>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }).join('');

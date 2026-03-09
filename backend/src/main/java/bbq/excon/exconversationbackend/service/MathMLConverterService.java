@@ -22,13 +22,14 @@ import java.util.List;
  */
 @Service
 public class MathMLConverterService {
-    
+
     /**
      * Extract content từ paragraph (text + OMML equations)
      * Giữ nguyên thứ tự như trong DOCX bằng cách parse XML trực tiếp
      * 
      * Strategy: Parse paragraph XML để đảm bảo text và OMML xuất hiện đúng thứ tự
-     * DOCX structure: <w:p><w:r><w:t>text</w:t></w:r><m:oMath>...</m:oMath><w:r>...</w:r></w:p>
+     * DOCX structure:
+     * <w:p><w:r><w:t>text</w:t></w:r><m:oMath>...</m:oMath><w:r>...</w:r></w:p>
      * 
      * @param para Paragraph từ Word document
      * @return Combined content với text và OMML expressions theo đúng thứ tự
@@ -37,40 +38,42 @@ public class MathMLConverterService {
         if (para == null) {
             return "";
         }
-        
+
         StringBuilder content = new StringBuilder();
-        
+
         try {
             // Strategy: Parse paragraph XML trực tiếp để giữ nguyên thứ tự
-            // DOCX structure: <w:p><w:r><w:t>text</w:t></w:r><m:oMath>...</m:oMath><w:r>...</w:r></w:p>
+            // DOCX structure:
+            // <w:p><w:r><w:t>text</w:t></w:r><m:oMath>...</m:oMath><w:r>...</w:r></w:p>
             // Parse XML để đảm bảo text và OMML xuất hiện đúng thứ tự như trong DOCX
-            
+
             CTP ctp = para.getCTP();
             XmlCursor cursor = ctp.newCursor();
-            
+
             try {
                 // Namespaces
                 String wNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
                 String mNamespace = "http://schemas.openxmlformats.org/officeDocument/2006/math";
-                
+
                 // Strategy: Parse XML để lấy tất cả child elements theo thứ tự
                 // DOCX structure: <w:p><w:r>...</w:r><m:oMath>...</m:oMath><w:r>...</w:r></w:p>
-                
+
                 // IMPORTANT: Cursor is already at paragraph (CTP) level
                 // Don't use toStartDoc() - it moves to document root!
                 // Just select child elements directly
-                
+
                 // Try different XPath patterns to find child elements
                 String[] xpathPatterns = {
-                    "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace + "' ./w:r | ./m:oMath",
-                    "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace + "' ./child::*",
-                    "./w:r | ./m:oMath",
-                    "./*"
+                        "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace
+                                + "' ./w:r | ./m:oMath",
+                        "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace + "' ./child::*",
+                        "./w:r | ./m:oMath",
+                        "./*"
                 };
-                
+
                 int elementCount = 0;
                 boolean foundElements = false;
-                
+
                 for (String xpath : xpathPatterns) {
                     try {
                         // Create new cursor for each attempt to ensure we're at paragraph level
@@ -80,40 +83,38 @@ public class MathMLConverterService {
                             testCursor.selectPath(xpath);
                             elementCount = 0;
                             content.setLength(0); // Reset content
-                            
+
                             while (testCursor.toNextSelection()) {
                                 elementCount++;
                                 XmlObject obj = testCursor.getObject();
-                                if (obj == null) continue;
-                                
+                                if (obj == null)
+                                    continue;
+
                                 String localName = obj.getDomNode().getLocalName();
                                 String namespaceURI = obj.getDomNode().getNamespaceURI();
-                                
-                                System.out.println("DEBUG: Found element: " + localName + " in namespace: " + namespaceURI);
-                                
-                                if (namespaceURI != null && namespaceURI.equals(mNamespace) && "oMath".equals(localName)) {
+                                if (namespaceURI != null && namespaceURI.equals(mNamespace)
+                                        && "oMath".equals(localName)) {
                                     // This is an OMML element - extract it at this position
                                     String ommlXml = obj.xmlText();
                                     if (ommlXml != null && !ommlXml.trim().isEmpty()) {
-                                        String cleanedOMML = bbq.excon.exconversationbackend.service.omml.OMMLNormalizer.cleanOMML(ommlXml);
+                                        String cleanedOMML = bbq.excon.exconversationbackend.service.omml.OMMLNormalizer
+                                                .cleanOMML(ommlXml);
                                         if (cleanedOMML != null && !cleanedOMML.trim().isEmpty()) {
                                             content.append("<omml>").append(cleanedOMML).append("</omml>");
-                                            System.out.println("DEBUG: Extracted OMML from paragraph XML (preserving order)");
                                         }
                                     }
-                                } else if (namespaceURI != null && namespaceURI.equals(wNamespace) && "r".equals(localName)) {
+                                } else if (namespaceURI != null && namespaceURI.equals(wNamespace)
+                                        && "r".equals(localName)) {
                                     // This is a run - extract text from it at this position
                                     String runText = extractTextFromRunXML(obj);
                                     if (runText != null && !runText.trim().isEmpty()) {
                                         content.append(runText);
-                                        System.out.println("DEBUG: Extracted text from run: " + runText.substring(0, Math.min(50, runText.length())));
                                     }
                                 }
                             }
-                            
+
                             if (elementCount > 0 && content.length() > 0) {
                                 foundElements = true;
-                                System.out.println("DEBUG: Successfully parsed " + elementCount + " elements using XPath: " + xpath);
                                 break; // Success, exit loop
                             }
                         } finally {
@@ -125,35 +126,28 @@ public class MathMLConverterService {
                         continue; // Try next pattern
                     }
                 }
-                
-                System.out.println("DEBUG: Total elements found in paragraph: " + elementCount);
-                
                 // Nếu không tìm thấy elements qua bất kỳ XPath nào, thử fallback method
                 if (!foundElements || elementCount == 0 || content.length() == 0) {
-                    System.out.println("DEBUG: No elements found via XPath, trying fallback method");
                     return extractContentWithMathFallback(para);
                 }
             } finally {
                 cursor.close();
             }
-            
+
         } catch (Exception e) {
             // Fallback to old method if XML parsing fails
             System.err.println("Error in XML-based extraction, using fallback: " + e.getMessage());
             e.printStackTrace();
             return extractContentWithMathFallback(para);
         }
-        
+
         String result = content.toString();
         if (result.isEmpty()) {
-            System.out.println("DEBUG: Content is empty, using fallback method");
             return extractContentWithMathFallback(para);
         }
-        System.out.println("DEBUG: Final extracted content (preserving order): " + 
-                         result.substring(0, Math.min(200, result.length())));
         return result;
     }
-    
+
     /**
      * Extract text từ run XML object
      * 
@@ -165,7 +159,7 @@ public class MathMLConverterService {
             String wNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
             XmlCursor cursor = runObj.newCursor();
             StringBuilder text = new StringBuilder();
-            
+
             try {
                 // Find all <w:t> elements in the run
                 cursor.selectPath("declare namespace w='" + wNamespace + "' .//w:t");
@@ -178,47 +172,50 @@ public class MathMLConverterService {
             } finally {
                 cursor.close();
             }
-            
+
             return text.toString();
         } catch (Exception e) {
             System.err.println("Error extracting text from run XML: " + e.getMessage());
             return "";
         }
     }
-    
+
     /**
-     * Fallback method: Extract content using runs + parse XML để tìm OMML ở đúng vị trí
+     * Fallback method: Extract content using runs + parse XML để tìm OMML ở đúng vị
+     * trí
      * Used when primary XML parsing fails
-     * Strategy: Parse XML một lần nữa với cách tiếp cận khác để tìm OMML ở đúng vị trí
+     * Strategy: Parse XML một lần nữa với cách tiếp cận khác để tìm OMML ở đúng vị
+     * trí
      */
     private String extractContentWithMathFallback(XWPFParagraph para) {
         StringBuilder content = new StringBuilder();
-        
+
         try {
             // Strategy: Parse XML để build ordered list của text và OMML
             CTP ctp = para.getCTP();
             XmlCursor cursor = ctp.newCursor();
-            
+
             try {
                 String wNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
                 String mNamespace = "http://schemas.openxmlformats.org/officeDocument/2006/math";
-                
+
                 // Strategy: Parse XML để lấy tất cả elements theo thứ tự
                 // Build ordered list: collect all elements with their positions
                 List<OrderedContent> orderedItems = new ArrayList<>();
-                
+
                 // Parse XML để lấy tất cả child elements theo thứ tự
                 // IMPORTANT: cursor từ ctp.newCursor() đã ở paragraph level
                 // KHÔNG dùng toStartDoc() - nó sẽ đưa cursor về document root!
-                
+
                 // Try different XPath patterns
                 String[] xpathPatterns = {
-                    "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace + "' ./w:r | ./m:oMath",
-                    "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace + "' ./child::*",
-                    "./w:r | ./m:oMath",
-                    "./*"
+                        "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace
+                                + "' ./w:r | ./m:oMath",
+                        "declare namespace w='" + wNamespace + "' declare namespace m='" + mNamespace + "' ./child::*",
+                        "./w:r | ./m:oMath",
+                        "./*"
                 };
-                
+
                 boolean parsed = false;
                 for (String xpath : xpathPatterns) {
                     try {
@@ -226,7 +223,7 @@ public class MathMLConverterService {
                         XmlCursor testCursor = ctp.newCursor();
                         try {
                             testCursor.selectPath(xpath);
-                
+
                             int position = 0;
                             while (testCursor.toNextSelection()) {
                                 XmlObject obj = testCursor.getObject();
@@ -234,10 +231,10 @@ public class MathMLConverterService {
                                     position += 10;
                                     continue;
                                 }
-                                
+
                                 String localName = obj.getDomNode().getLocalName();
                                 String namespaceURI = obj.getDomNode().getNamespaceURI();
-                                
+
                                 if (namespaceURI != null && namespaceURI.equals(wNamespace) && "r".equals(localName)) {
                                     // This is a run - extract text and OMML from it
                                     String runText = extractTextFromRunXML(obj);
@@ -245,7 +242,7 @@ public class MathMLConverterService {
                                         orderedItems.add(new OrderedContent(position, runText, false));
                                         position += 1;
                                     }
-                                    
+
                                     // Check for OMML in this run
                                     try {
                                         XmlCursor runCursor = obj.newCursor();
@@ -257,9 +254,11 @@ public class MathMLConverterService {
                                                 if (mathObject != null) {
                                                     String ommlXml = mathObject.xmlText();
                                                     if (ommlXml != null && !ommlXml.trim().isEmpty()) {
-                                                        String cleanedOMML = bbq.excon.exconversationbackend.service.omml.OMMLNormalizer.cleanOMML(ommlXml);
+                                                        String cleanedOMML = bbq.excon.exconversationbackend.service.omml.OMMLNormalizer
+                                                                .cleanOMML(ommlXml);
                                                         if (cleanedOMML != null && !cleanedOMML.trim().isEmpty()) {
-                                                            orderedItems.add(new OrderedContent(position, cleanedOMML, true));
+                                                            orderedItems.add(
+                                                                    new OrderedContent(position, cleanedOMML, true));
                                                             position += 1;
                                                         }
                                                     }
@@ -271,21 +270,23 @@ public class MathMLConverterService {
                                     } catch (Exception e) {
                                         // Ignore
                                     }
-                                } else if (namespaceURI != null && namespaceURI.equals(mNamespace) && "oMath".equals(localName)) {
+                                } else if (namespaceURI != null && namespaceURI.equals(mNamespace)
+                                        && "oMath".equals(localName)) {
                                     // This is a paragraph-level OMML element
                                     String ommlXml = obj.xmlText();
                                     if (ommlXml != null && !ommlXml.trim().isEmpty()) {
-                                        String cleanedOMML = bbq.excon.exconversationbackend.service.omml.OMMLNormalizer.cleanOMML(ommlXml);
+                                        String cleanedOMML = bbq.excon.exconversationbackend.service.omml.OMMLNormalizer
+                                                .cleanOMML(ommlXml);
                                         if (cleanedOMML != null && !cleanedOMML.trim().isEmpty()) {
                                             orderedItems.add(new OrderedContent(position, cleanedOMML, true));
                                             position += 1;
                                         }
                                     }
                                 }
-                                
+
                                 position += 10;
                             }
-                            
+
                             if (orderedItems.size() > 0) {
                                 parsed = true;
                                 break; // Success, exit loop
@@ -298,10 +299,9 @@ public class MathMLConverterService {
                         continue;
                     }
                 }
-                
+
                 if (!parsed) {
                     // If XML parsing failed, fall back to simple run extraction
-                    System.out.println("DEBUG: Fallback XML parsing failed, using simple run extraction");
                     for (XWPFRun run : para.getRuns()) {
                         try {
                             String runText = run.getText(0);
@@ -313,16 +313,15 @@ public class MathMLConverterService {
                         }
                     }
                     String result = content.toString();
-                    System.out.println("DEBUG: Simple fallback result: " + result.substring(0, Math.min(200, result.length())));
                     return result;
                 }
-                
+
                 // All elements have been collected in the first pass above
                 // No need for second pass
-                
+
                 // Sort by position and build final content
                 orderedItems.sort((a, b) -> Integer.compare(a.position, b.position));
-                
+
                 for (OrderedContent item : orderedItems) {
                     if (item.isOMML) {
                         content.append("<omml>").append(item.content).append("</omml>");
@@ -330,11 +329,11 @@ public class MathMLConverterService {
                         content.append(item.content);
                     }
                 }
-                
+
             } finally {
                 cursor.close();
             }
-            
+
         } catch (Exception e) {
             // Final fallback: extract from runs only
             System.err.println("Error in fallback XML parsing: " + e.getMessage());
@@ -352,13 +351,11 @@ public class MathMLConverterService {
                 }
             }
         }
-        
+
         String result = content.toString();
-        System.out.println("DEBUG: Fallback method result: " + 
-                         result.substring(0, Math.min(200, result.length())));
         return result;
     }
-    
+
     /**
      * Helper class để track content với vị trí và loại
      */
@@ -366,7 +363,7 @@ public class MathMLConverterService {
         int position;
         String content;
         boolean isOMML;
-        
+
         OrderedContent(int position, String content, boolean isOMML) {
             this.position = position;
             this.content = content;
