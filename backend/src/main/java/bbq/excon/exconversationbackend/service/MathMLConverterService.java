@@ -120,9 +120,9 @@ public class MathMLConverterService {
                         } finally {
                             testCursor.close();
                         }
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
+                        // Catch both Exception and Error (e.g. NoClassDefFoundError for Saxon)
                         System.err.println("DEBUG: XPath pattern failed: " + xpath + " - " + e.getMessage());
-                        e.printStackTrace();
                         continue; // Try next pattern
                     }
                 }
@@ -134,10 +134,9 @@ public class MathMLConverterService {
                 cursor.close();
             }
 
-        } catch (Exception e) {
-            // Fallback to old method if XML parsing fails
+        } catch (Throwable e) {
+            // Catch both Exception and Error (e.g. NoClassDefFoundError for missing Saxon)
             System.err.println("Error in XML-based extraction, using fallback: " + e.getMessage());
-            e.printStackTrace();
             return extractContentWithMathFallback(para);
         }
 
@@ -294,8 +293,9 @@ public class MathMLConverterService {
                         } finally {
                             testCursor.close();
                         }
-                    } catch (Exception e) {
-                        System.err.println("DEBUG: Fallback XPath failed: " + xpath);
+                    } catch (Throwable e) {
+                        // Catch both Exception and Error (e.g. NoClassDefFoundError for Saxon)
+                        System.err.println("DEBUG: Fallback XPath failed: " + xpath + " - " + e.getMessage());
                         continue;
                     }
                 }
@@ -334,8 +334,8 @@ public class MathMLConverterService {
                 cursor.close();
             }
 
-        } catch (Exception e) {
-            // Final fallback: extract from runs only
+        } catch (Throwable e) {
+            // Catch both Exception and Error (e.g. NoClassDefFoundError for missing Saxon)
             System.err.println("Error in fallback XML parsing: " + e.getMessage());
             try {
                 for (XWPFRun run : para.getRuns()) {
@@ -344,7 +344,7 @@ public class MathMLConverterService {
                         content.append(runText);
                     }
                 }
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 String fallbackText = para.getText();
                 if (fallbackText != null) {
                     return fallbackText;

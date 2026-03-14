@@ -136,17 +136,11 @@ public class DocumentParserService {
                                 + currentChapter.getChapterName() +
                                 " - " + paraText.substring(0, Math.min(50, paraText.length())));
 
-                        // Extract content (text + OMML)
-                        String contentOmml = mathMLConverterService.extractContentWithMath(para);
+                        // Extract content from the question paragraph itself (text + OMML)
+                        String firstParaOmml = mathMLConverterService.extractContentWithMath(para);
 
-                        if (contentOmml != null && !contentOmml.trim().isEmpty()) {
-                            // Convert sang MathML cho FE hiển thị
-                            String contentMathml = ommlToMathMLConverterService.convertContentOMMLToMathML(contentOmml);
-                            if (contentMathml != null && contentMathml.trim().isEmpty()) {
-                                contentMathml = null; // tránh lưu MathML hỏng
-                            }
-
-                            // Create Question
+                        if (firstParaOmml != null && !firstParaOmml.trim().isEmpty()) {
+                            // Create Question entity
                             Question question = new Question();
                             question.setChapter(currentChapter);
                             question.setType("Trắc nghiệm");
@@ -154,40 +148,31 @@ public class DocumentParserService {
                             question.setIsActive(true);
                             question = questionRepository.save(question);
 
-                            // Create QuestionVersion with content
+                            // IMPORTANT: Save version FIRST to get valid ID for foreign key references
                             QuestionVersion version = new QuestionVersion();
                             version.setQuestion(question);
                             version.setVersionNumber(1);
                             version.setTitle("Câu " + questionNumber);
-                            version.setContentOmml(contentOmml); // Format: "Text <omml>...</omml> Text"
-                            version.setContentMathml(contentMathml); // Format: "Text <math>...</math> Text"
                             version.setCreatedByName(upload.getUploadedByName());
                             version.setIsPublished(false);
-
-                            // IMPORTANT: Save version FIRST to get valid ID for foreign key references
                             version = questionVersionRepository.save(version);
 
-                            // Extract and save images from this paragraph and following paragraphs.
-                            // Returns placeholder string to embed into content (e.g. "[IMAGE:42]").
-                            String imagePlaceholders = extractAndSaveImagesWithPlaceholders(
-                                    document, para, version, question.getId());
+                            // Collect all body paragraphs that belong to this question
+                            // (paragraphs between the question line and the first answer/next question)
+                            List<XWPFParagraph> bodyParagraphs = extractQuestionBodyParagraphs(
+                                    document, para);
 
-                            // If images were found, append their placeholders into
-                            // contentMathml/contentOmml
-                            // and save the version again so FE can render images inline at correct
-                            // position.
-                            if (imagePlaceholders != null && !imagePlaceholders.isEmpty()) {
-                                String updatedOmml = (version.getContentOmml() != null
-                                        ? version.getContentOmml()
-                                        : "") + imagePlaceholders;
-                                String updatedMathml = (version.getContentMathml() != null
-                                        ? version.getContentMathml()
-                                        : "") + imagePlaceholders;
-                                version.setContentOmml(updatedOmml);
-                                version.setContentMathml(updatedMathml);
-                                version = questionVersionRepository.save(version);
-                                System.out.println("  [IMAGE PLACEHOLDER] Appended placeholders: " + imagePlaceholders);
-                            }
+                            // Build combined content (OMML & MathML) from question paragraph
+                            // and all body paragraphs, inserting [IMAGE:id] at the correct position
+                            String[] combinedContent = buildQuestionContent(
+                                    firstParaOmml, para, bodyParagraphs, version, question.getId());
+
+                            String contentOmml = combinedContent[0];
+                            String contentMathml = combinedContent[1];
+
+                            version.setContentOmml(contentOmml);
+                            version.setContentMathml(contentMathml);
+                            version = questionVersionRepository.save(version);
 
                             // Extract and save answers (A, B, C, D) from following paragraphs
                             int answersFound = extractAndSaveAnswers(document, para, version,
@@ -268,8 +253,9 @@ public class DocumentParserService {
             String name = chuongMatcher.group(2);
 
             int index = parseChapterIndex(indexStr);
+            // Store only the descriptive name; fall back to "Chương X" if none
             String chapterName = name != null && !name.trim().isEmpty()
-                    ? "Chương " + indexStr + ": " + name.trim()
+                    ? name.trim()
                     : "Chương " + indexStr;
 
             return new ChapterInfo(index, chapterName);
@@ -285,8 +271,9 @@ public class DocumentParserService {
             String name = chapterMatcher.group(2);
 
             int index = parseChapterIndex(indexStr);
+            // Store only the descriptive name; fall back to "Chapter X" if none
             String chapterName = name != null && !name.trim().isEmpty()
-                    ? "Chapter " + indexStr + ": " + name.trim()
+                    ? name.trim()
                     : "Chapter " + indexStr;
 
             return new ChapterInfo(index, chapterName);
@@ -302,8 +289,9 @@ public class DocumentParserService {
             String name = phanMatcher.group(2);
 
             int index = parseChapterIndex(indexStr);
+            // Store only the descriptive name; fall back to "Phần X" if none
             String chapterName = name != null && !name.trim().isEmpty()
-                    ? "Phần " + indexStr + ": " + name.trim()
+                    ? name.trim()
                     : "Phần " + indexStr;
 
             return new ChapterInfo(index, chapterName);
@@ -664,45 +652,101 @@ public class DocumentParserService {
     }
 
     /**
-     * Extract images from paragraph and save them to database.
-     * Also checks the next few paragraphs for images.
-     * Returns a placeholder string "[IMAGE:{id}]" for each saved image,
-     * so caller can embed them into content at the correct position.
+     * Collect all paragraphs that belong to the body of a question.
+     * Scanning starts from the paragraph AFTER the question paragraph and stops
+     * when a new question, a chapter heading, or an answer option is detected.
+     *
+     * @param document  the full DOCX document
+     * @param questionPara  the paragraph that was identified as a question start
+     * @return ordered list of body paragraphs (may contain text and/or images)
      */
-    private String extractAndSaveImagesWithPlaceholders(XWPFDocument document, XWPFParagraph para,
-            QuestionVersion version, Long questionId) {
-        StringBuilder placeholders = new StringBuilder();
-        try {
-            // Extract images from current paragraph (question paragraph itself)
-            List<Image> imagesInPara = extractImagesFromParagraphWithSave(para, version, questionId);
-            for (Image img : imagesInPara) {
-                placeholders.append("[IMAGE:").append(img.getId()).append("]");
-            }
-
-            // Also check next 3 paragraphs for images (images often appear right after
-            // question text)
-            List<XWPFParagraph> allParagraphs = document.getParagraphs();
-            int currentIndex = allParagraphs.indexOf(para);
-            if (currentIndex >= 0) {
-                for (int i = 1; i <= 3 && (currentIndex + i) < allParagraphs.size(); i++) {
-                    XWPFParagraph nextPara = allParagraphs.get(currentIndex + i);
-                    String nextParaText = nextPara.getText();
-                    // Stop if we hit another question or answer paragraph
-                    if (nextParaText != null && isQuestionParagraph(nextParaText)) {
-                        break;
-                    }
-                    List<Image> imagesInNext = extractImagesFromParagraphWithSave(nextPara, version, questionId);
-                    for (Image img : imagesInNext) {
-                        placeholders.append("[IMAGE:").append(img.getId()).append("]");
-                    }
+    private List<XWPFParagraph> extractQuestionBodyParagraphs(XWPFDocument document,
+            XWPFParagraph questionPara) {
+        List<XWPFParagraph> bodyParagraphs = new java.util.ArrayList<>();
+        List<XWPFParagraph> allParagraphs = document.getParagraphs();
+        int startIndex = allParagraphs.indexOf(questionPara);
+        if (startIndex < 0) {
+            return bodyParagraphs;
+        }
+        for (int i = startIndex + 1; i < allParagraphs.size(); i++) {
+            XWPFParagraph next = allParagraphs.get(i);
+            String text = next.getText();
+            // Stop at a new question, chapter heading, or answer option
+            if (text != null && !text.trim().isEmpty()) {
+                if (isQuestionParagraph(text) || isAnswerParagraph(text)
+                        || detectChapter(text) != null) {
+                    break;
                 }
             }
-        } catch (Exception e) {
-            System.err
-                    .println("Error extracting images for question version " + version.getId() + ": " + e.getMessage());
-            e.printStackTrace();
+            bodyParagraphs.add(next);
         }
-        return placeholders.toString();
+        return bodyParagraphs;
+    }
+
+    /**
+     * Build combined OMML and MathML content for a question by merging:
+     * 1. The content of the question paragraph itself.
+     * 2. The content of each body paragraph in order, inserting [IMAGE:id]
+     *    placeholders at the exact position where images appear.
+     *
+     * @param firstParaOmml  OMML content already extracted from the question paragraph
+     * @param questionPara   the question paragraph (may also contain inline images)
+     * @param bodyParagraphs paragraphs after the question line that still belong to it
+     * @param version        the QuestionVersion entity (must already be persisted)
+     * @param questionId     parent question ID (used when saving image files)
+     * @return String[2]: [0] = combined OMML string, [1] = combined MathML string
+     */
+    private String[] buildQuestionContent(String firstParaOmml, XWPFParagraph questionPara,
+            List<XWPFParagraph> bodyParagraphs, QuestionVersion version, Long questionId) {
+        StringBuilder ommlBuilder = new StringBuilder();
+        StringBuilder mathmlBuilder = new StringBuilder();
+
+        // --- Part 1: Question paragraph itself ---
+        // Strip the "Câu X." / "Câu X " prefix from the raw OMML so that the
+        // content field holds only the question body (the title field carries the number)
+        String strippedFirstParaOmml = stripQuestionPrefix(firstParaOmml);
+        ommlBuilder.append(strippedFirstParaOmml);
+        String firstParaMathml = ommlToMathMLConverterService.convertContentOMMLToMathML(strippedFirstParaOmml);
+        if (firstParaMathml == null || firstParaMathml.trim().isEmpty()) {
+            firstParaMathml = strippedFirstParaOmml; // fall back to OMML if conversion fails
+        }
+        mathmlBuilder.append(firstParaMathml);
+
+        // Append any inline images from the question paragraph
+        List<Image> imagesInQuestion = extractImagesFromParagraphWithSave(questionPara, version, questionId);
+        for (Image img : imagesInQuestion) {
+            String placeholder = "[IMAGE:" + img.getId() + "]";
+            ommlBuilder.append(placeholder);
+            mathmlBuilder.append(placeholder);
+            System.out.println("  [IMAGE PLACEHOLDER] Inserted from question para: " + placeholder);
+        }
+
+        // --- Part 2: Body paragraphs (text or images between question line and answers) ---
+        for (XWPFParagraph bodyPara : bodyParagraphs) {
+            // First, check for images in this paragraph and insert placeholders
+            List<Image> imagesInBody = extractImagesFromParagraphWithSave(bodyPara, version, questionId);
+            for (Image img : imagesInBody) {
+                String placeholder = "[IMAGE:" + img.getId() + "]";
+                ommlBuilder.append(placeholder);
+                mathmlBuilder.append(placeholder);
+                System.out.println("  [IMAGE PLACEHOLDER] Inserted from body para: " + placeholder);
+            }
+
+            // Then append any text/OMML content from this paragraph
+            String bodyOmml = mathMLConverterService.extractContentWithMath(bodyPara);
+            if (bodyOmml != null && !bodyOmml.trim().isEmpty()) {
+                ommlBuilder.append(" ").append(bodyOmml);
+                String bodyMathml = ommlToMathMLConverterService.convertContentOMMLToMathML(bodyOmml);
+                if (bodyMathml == null || bodyMathml.trim().isEmpty()) {
+                    bodyMathml = bodyOmml;
+                }
+                mathmlBuilder.append(" ").append(bodyMathml);
+                System.out.println("  [BODY TEXT] Appended body paragraph text: "
+                        + bodyOmml.substring(0, Math.min(60, bodyOmml.length())));
+            }
+        }
+
+        return new String[] { ommlBuilder.toString(), mathmlBuilder.toString() };
     }
 
     /**
@@ -744,6 +788,26 @@ public class DocumentParserService {
             System.err.println("Error extracting images from paragraph: " + e.getMessage());
         }
         return savedImages;
+    }
+
+    /**
+     * Remove the question-number prefix from content so that only the body is stored.
+     * Examples of removed prefixes: "Câu 1. ", "Câu 12: ", "Question 3. ", "3. "
+     * The prefix detection is intentionally lenient so it still works even when
+     * whitespace or punctuation varies slightly.
+     *
+     * @param content raw content string (OMML or plain text) that may start with a prefix
+     * @return content with the leading question prefix stripped and trimmed
+     */
+    private String stripQuestionPrefix(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return content;
+        }
+        // Matches: "Câu 12. ", "Câu 12: ", "Câu 12 ", "Question 3. ", "3. ", "12) " etc.
+        String stripped = content.replaceFirst(
+                "^\\s*(?:(?:C[aâ]u|Question|Câu)\\s+\\d+|\\d+)\\s*[.:\\-)]\\s*",
+                "");
+        return stripped.trim().isEmpty() ? content : stripped;
     }
 
     /**
